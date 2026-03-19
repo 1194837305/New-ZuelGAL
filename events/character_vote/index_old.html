@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galgame 角色投票</title>
+    <style>
+        /* --- 全局样式 --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 24px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* --- 头部 --- */
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        header h1 {
+            font-size: 2.5rem;
+            color: #1a202c;
+            margin-bottom: 8px;
+        }
+        header p {
+            font-size: 1.1rem;
+            color: #718096;
+        }
+
+        /* --- 角色网格布局 --- */
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 24px;
+        }
+
+        /* --- 角色卡片 --- */
+        .character-card {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .character-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 卡片图片 */
+        .card-image-container {
+            width: 100%;
+            padding-top: 125%; /* 控制图片高宽比 */
+            position: relative;
+            background-color: #e2e8f0;
+        }
+        .card-image-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 保持图片比例并填充 */
+        }
+
+        /* 卡片内容 */
+        .card-content {
+            padding: 16px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .char-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .game-title {
+            font-size: 0.85rem;
+            color: #a0aec0;
+            margin-bottom: 12px;
+        }
+        .vote-count {
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-bottom: 16px;
+        }
+
+        /* 投票按钮 */
+        .vote-button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background-color: #4299e1;
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: auto; /* 将按钮推到底部 */
+        }
+        .vote-button:hover {
+            background-color: #2b6cb0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Galgame 角色人气总选举</h1>
+            <p>为你心爱的角色投上宝贵的一票！</p>
+        </header>
+
+        <main>
+            <div class="character-grid" id="character-grid">
+                <!-- 角色卡片将由 JavaScript 动态生成 -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- 模拟从VNDB获取的假数据 ---
+        const fakeCharacterData = [
+            {
+                id: 1,
+                name: 'Saber',
+                game: 'Fate/stay night',
+                votes: 1250,
+                imageUrl: 'https://s4.vndb.org/ch/11/211.jpg' // 示例图片URL
+            },
+            {
+                id: 2,
+                name: '牧瀬 紅莉栖',
+                game: 'Steins;Gate',
+                votes: 1180,
+                imageUrl: 'https://s4.vndb.org/ch/71/20071.jpg'
+            },
+            {
+                id: 3,
+                name: '遠坂 凛',
+                game: 'Fate/stay night',
+                votes: 1050,
+                imageUrl: 'https://s4.vndb.org/ch/12/212.jpg'
+            },
+            {
+                id: 4,
+                name: '戦場ヶ原 ひたぎ',
+                game: '化物語',
+                votes: 980,
+                imageUrl: 'https://s4.vndb.org/ch/59/20059.jpg'
+            },
+            {
+                id: 5,
+                name: '椎名 ましろ',
+                game: 'さくら荘のペットな彼女',
+                votes: 920,
+                imageUrl: 'https://s4.vndb.org/ch/81/54281.jpg'
+            },
+            {
+                id: 6,
+                name: '雪ノ下 雪乃',
+                game: 'やはり俺の青春ラブコメはまちがっている 。',
+                votes: 890,
+                imageUrl: 'https://s4.vndb.org/ch/78/63178.jpg'
+            },
+            {
+                id: 7,
+                name: '加藤 恵',
+                game: '冴えない彼女の育てかた',
+                votes: 850,
+                imageUrl: 'https://s4.vndb.org/ch/93/70493.jpg'
+            },
+            {
+                id: 8,
+                name: '間桐 桜',
+                game: 'Fate/stay night',
+                votes: 760,
+                imageUrl: 'https://s4.vndb.org/ch/13/213.jpg'
+            }
+        ];
+
+        // --- 动态渲染角色卡片 ---
+        const grid = document.getElementById('character-grid' );
+
+        fakeCharacterData.forEach(char => {
+            const card = document.createElement('div');
+            card.className = 'character-card';
+
+            card.innerHTML = `
+                <div class="card-image-container">
+                    <img src="${char.imageUrl}" alt="${char.name}">
+                </div>
+                <div class="card-content">
+                    <h2 class="char-name">${char.name}</h2>
+                    <p class="game-title">${char.game}</p>
+                    <p class="vote-count">当前票数: ${char.votes.toLocaleString()}</p>
+                    <button class="vote-button" onclick="handleVote(${char.id}, '${char.name}')">
+                        投票
+                    </button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        // --- 处理投票点击（目前只是一个提示） ---
+        function handleVote(characterId, characterName) {
+            alert(`感谢您为【${characterName}】投票！\n（注意：当前为演示阶段，投票数据不会被真实记录。）`);
+        }
+    </script>
+
+</body>
+</html>
