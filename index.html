@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZuelGal - 中南财经政法大学视觉小说社</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&amp;display=swap" rel="stylesheet">
+    
+    <style>
+        /* === 1. 全局与变量 === */
+        :root {
+            --primary: #c9171e; 
+            --bg-dark: #0a0a0c;
+            --text-main: #e0e0e0;
+            --text-muted: #888888;
+            --border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Serif SC', 'Yu Mincho', 'MS Mincho', serif;
+            overflow: hidden; 
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px;}
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* === 2. 动态背景层 === */
+        #global-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('assets/bg1.jpg'); 
+            background-size: cover; background-position: center;
+            z-index: -2;
+            animation: slowBreath 30s infinite alternate;
+        }
+        @keyframes slowBreath {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.08); }
+        }
+        #bg-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to right, rgba(10,10,12,0.95) 0%, rgba(10,10,12,0.6) 40%, rgba(10,10,12,0.3) 100%);
+            z-index: -1; pointer-events: none;
+        }
+
+        /* === 3. 18+ 警告 (Age Gate) === */
+        #age-gate {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 1s ease;
+        }
+        .age-gate-box {
+            text-align: center; border: 1px solid #333; padding: 60px;
+            background: radial-gradient(circle, rgba(30,0,0,0.5) 0%, rgba(0,0,0,1) 100%);
+            max-width: 90%; box-sizing: border-box;
+        }
+        .age-gate-box h1 { color: var(--primary); letter-spacing: 5px; margin-bottom: 20px; font-size: 32px;}
+        .age-gate-box p { line-height: 2; margin-bottom: 40px; color: #ccc; font-size: 15px;}
+        .btn-group-age { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .age-gate-box button {
+            background: transparent; color: #fff; border: 1px solid #555;
+            padding: 10px 40px; font-family: inherit; font-size: 16px;
+            cursor: pointer; transition: 0.3s;
+        }
+        .age-gate-box button:hover { border-color: var(--primary); background: rgba(201, 23, 30, 0.2); }
+
+        /* === 4. 侧边导航栏 (PC端布局) === */
+        #sidebar {
+            position: fixed; top: 0; left: 0; width: 280px; height: 100%;
+            background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-color);
+            z-index: 100; display: flex; flex-direction: column;
+        }
+        .logo-area { padding: 50px 0; text-align: center; border-bottom: 1px solid var(--border-color); }
+        .logo-area h1 { margin: 0; font-size: 36px; font-weight: 900; letter-spacing: 2px;}
+        .logo-area h1 span { color: var(--primary); }
+        .logo-area p { margin: 10px 0 0; font-size: 12px; color: var(--text-muted); letter-spacing: 3px; }
+        
+        /* 默认隐藏移动端专属 BGM 按钮 */
+        .mobile-top-bgm { display: none; }
+
+        .nav-menu { flex: 1; display: flex; flex-direction: column; padding: 40px 0; }
+        .nav-item {
+            padding: 15px 40px; color: var(--text-muted); text-decoration: none;
+            font-size: 18px; letter-spacing: 3px; position: relative;
+            transition: 0.3s; display: flex; align-items: baseline;
+        }
+        .nav-item span.en { font-size: 12px; opacity: 0.5; margin-left: 10px; font-family: sans-serif; }
+        .nav-item:hover, .nav-item.active { color: #fff; background: rgba(255,255,255,0.05); padding-left: 50px;}
+        .nav-item.active::before {
+            content: ''; position: absolute; left: 0; top: 0;
+            width: 4px; height: 100%; background: var(--primary);
+        }
+
+        .sidebar-footer {
+            padding: 30px; text-align: center; font-size: 12px; color: #555;
+            border-top: 1px solid var(--border-color);
+        }
+        .bgm-toggle-btn { cursor: pointer; color: var(--text-muted); transition: 0.3s; user-select: none; }
+        .bgm-toggle-btn:hover { color: #fff; }
+
+        /* === 5. 右侧内容区 === */
+        #main-content {
+            margin-left: 280px; height: 100vh; overflow-y: auto; overflow-x: hidden;
+            position: relative; scroll-behavior: smooth; display: flex; flex-direction: column;
+            box-sizing: border-box; /* 👈 让高度包含 padding */
+        }
+        .view-container { flex: 1; width: 100%; opacity: 1; transition: opacity 0.4s ease; }
+        .view-container.fade { opacity: 0; }
+
+        /* === 6. 内容区块样式 === */
+        .hero-video {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover; z-index: 0;
+            transform: translateZ(0); will-change: transform; 
+            pointer-events: none;
+            object-position: right center;
+        }
+
+        .hero-webp {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover; 
+            object-position: center; /* 确保手机端居中裁剪 */
+            z-index: 0;
+            pointer-events: none;
+            object-position: right center;
+        }
+
+        .mobile-only { display: none; }
+        .pc-only { display: block; }
+
+        /* 专门给视频加一个压暗遮罩，性能消耗极小 */
+        .hero-video-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); 
+            z-index: 1; /* 盖在视频上面，文字下面 */
+            pointer-events: none;
+        }
+
+        /* 确保文字部分层级更高，别被遮住 */
+        .hero-title, .hero-subtitle, .scroll-down {
+            z-index: 2;
+            position: relative;
+        }
+        
+        .hero-section {
+            min-height: 100vh; display: flex; flex-direction: column;
+            justify-content: flex-end; padding: 100px; box-sizing: border-box;
+            position: relative;
+            z-index: 1; /* 建立独立的层叠上下文 */
+            overflow: hidden; /* 防止视频多余的部分溢出 */
+        }
+        .hero-title { font-size: 4rem; text-shadow: 2px 4px 10px rgba(0,0,0,0.8); margin: 0; line-height: 1.2;}
+        .hero-subtitle { font-size: 1.5rem; color: #bbb; margin-top: 10px; letter-spacing: 5px; }
+        
+        .scroll-down {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            animation: bounce 2s infinite; color: #fff; font-size: 12px; letter-spacing: 2px; text-align: center;
+        }
+        .scroll-down::after { content: '↓'; display: block; font-size: 24px; margin-top: 5px; }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
+            40% { transform: translateY(-15px) translateX(-50%); }
+            60% { transform: translateY(-7px) translateX(-50%); }
+        }
+
+        .content-section { padding: 80px 100px; background: rgba(0,0,0,0.7); border-top: 1px solid var(--border-color); }
+        .section-title {
+            font-size: 32px; color: var(--primary); margin-bottom: 40px;
+            display: flex; align-items: baseline; border-bottom: 1px solid #333; padding-bottom: 15px;
+        }
+        .section-title span { font-size: 16px; color: #666; margin-left: 15px; font-family: sans-serif; letter-spacing: 2px;}
+
+        .news-list { list-style: none; padding: 0; margin: 0; }
+        .news-item { display: flex; padding: 15px 0; border-bottom: 1px dashed #333; transition: 0.3s; }
+        .news-item:hover { background: rgba(255,255,255,0.05); padding-left: 10px; }
+        .news-date { width: 120px; color: var(--primary); font-family: sans-serif; }
+        .news-tag { background: #222; padding: 2px 10px; font-size: 12px; margin-right: 15px; border: 1px solid #444; }
+        .news-title { color: #ddd; cursor: pointer; flex: 1;}
+        .news-title:hover { color: #fff; text-decoration: underline; }
+
+        .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .archive-list { display: flex; flex-direction: column; gap: 20px; }
+/* === 登场人物：档案卡片风格 === */
+        .cast-grid { 
+            display: grid; 
+            /* 响应式网格：电脑上一排展示多个，手机上自动变成一排一个 */
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 25px; 
+        }
+        .cast-card {
+            display: flex; align-items: center; gap: 20px;
+            background: rgba(20, 20, 25, 0.6);
+            border: 1px solid #333; border-radius: 12px;
+            padding: 20px; transition: 0.3s;
+        }
+        .cast-card:hover {
+            background: rgba(30, 30, 35, 0.8);
+            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .cast-avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            background-size: cover; background-position: center;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.2);
+            flex-shrink: 0;
+        }
+        .cast-info { flex: 1; }
+        .cast-name { font-size: 20px; color: #fff; margin: 0 0 5px 0; font-weight: bold; }
+        .cast-role { font-size: 13px; color: var(--primary); margin: 0 0 8px 0; letter-spacing: 1px; }
+        .cast-desc { font-size: 13px; color: #aaa; line-height: 1.5; }
+
+        /* 手机端极小屏幕适配：头像居中排布 */
+        @media (max-width: 400px) {
+            .cast-card { flex-direction: column; text-align: center; }
+        }        
+        .archive-item {
+            display: flex; background: rgba(20,20,25,0.6); 
+            border: 1px solid #333; border-radius: 8px; overflow: hidden;
+            transition: 0.3s; cursor: pointer;
+        }
+        .archive-item:hover { 
+            background: rgba(30,30,35,0.8); 
+            border-color: var(--primary); 
+            transform: translateX(10px); 
+        }
+        .archive-cover {
+            width: 240px; min-width: 240px; height: 150px;
+            background-size: cover; background-position: center;
+            border-right: 1px solid #333;
+        }
+        .archive-content { padding: 25px; display: flex; flex-direction: column; justify-content: space-between; flex: 1; }
+        .archive-title { font-size: 20px; color: #fff; margin: 0 0 10px 0; }
+        .archive-summary { font-size: 14px; color: var(--text-muted); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .archive-meta { font-size: 12px; color: #666; font-family: sans-serif; display: flex; gap: 15px; margin-top: 15px; }
+        .archive-meta span { display: flex; align-items: center; gap: 5px; }
+
+        /* 手机端适配：改成上下排列 */
+        @media (max-width: 850px) {
+            .archive-item { flex-direction: column; }
+            .archive-cover { width: 100%; height: 180px; border-right: none; border-bottom: 1px solid #333; }
+        }
+        .project-card {
+            background: rgba(20,20,25,0.8); border: 1px solid #333;
+            overflow: hidden; cursor: pointer; transition: 0.4s; position: relative;
+        }
+        .project-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 30px rgba(201, 23, 30, 0.2); }
+        .project-img { width: 100%; height: 250px; background-size: cover; background-position: center; border-bottom: 2px solid var(--primary); }
+        .project-info { padding: 30px; }
+        .project-info h3 { margin: 0 0 10px 0; font-size: 24px; }
+        .project-info p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+        .status-badge {
+            position: absolute; 
+            top: 15px; 
+            right: 15px; 
+            /* 👇 这行是救命稻草！强制把它拉到图层最上方 */
+            z-index: 10; 
+            
+            /* 下面保留你原本的样式，不用照抄我的，保持你原来的颜色和内边距即可 */
+            padding: 4px 10px; 
+            font-size: 12px; 
+            border-radius: 4px; 
+            font-weight: bold;
+        }
+        .status-ended { background: #555; }
+
+        .special-event-card { display: flex; border: 1px solid #333; background: rgba(20,20,25,0.8); }
+        .special-event-card .project-img { width: 50%; height: auto; min-height: 300px; border-bottom: none; border-right: 2px solid var(--primary); }
+        .special-event-card .project-info { width: 50%; display: flex; flex-direction: column; justify-content: center; padding: 40px; box-sizing: border-box;}
+/* === 资料仓库：B站专栏风格列表 === */
+        .archive-list { display: flex; flex-direction: column; gap: 20px; }
+        .archive-item {
+            display: flex; background: rgba(20,20,25,0.6); 
+            border: 1px solid #333; border-radius: 8px; overflow: hidden;
+            transition: 0.3s; cursor: pointer;
+        }
+        .archive-item:hover { 
+            background: rgba(30,30,35,0.8); 
+            border-color: var(--primary); 
+            transform: translateX(10px); 
+        }
+        .archive-cover {
+            width: 240px; min-width: 240px; height: 150px;
+            background-size: cover; background-position: center;
+            border-right: 1px solid #333;
+        }
+        .archive-content { padding: 25px; display: flex; flex-direction: column; justify-content: space-between; flex: 1; }
+        .archive-title { font-size: 20px; color: #fff; margin: 0 0 10px 0; }
+        .archive-summary { font-size: 14px; color: var(--text-muted); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .archive-meta { font-size: 12px; color: #666; font-family: sans-serif; display: flex; gap: 15px; margin-top: 15px; }
+        .archive-meta span { display: flex; align-items: center; gap: 5px; }
+
+        /* 手机端适配：改成上下排列 */
+        @media (max-width: 850px) {
+            .archive-item { flex-direction: column; }
+            .archive-cover { width: 100%; height: 180px; border-right: none; border-bottom: 1px solid #333; }
+        }
+        /* === 7. 全局底部友链区 === */
+        .global-footer {
+            background: #050505; border-top: 1px solid #222; padding: 30px 20px;
+            text-align: center; font-size: 12px; color: #666; width: 100%; box-sizing: border-box;
+        }
+        .friendly-links { margin-bottom: 15px; }
+        .friendly-links .link-label { color: #888; margin-right: 10px; }
+        .friendly-links a { color: #888; text-decoration: none; margin: 0 5px; transition: 0.3s; }
+        .friendly-links a:hover { color: var(--primary); }
+        .copyright { color: #444; }
+
+        /* === 8. 响应式布局 (Mobile Adaptation) 黑魔法核心 === */
+        @media (max-width: 850px) {
+            /* 核心魔法：手机端干掉视频，显示动图 */
+            .pc-only { display: none !important; }
+            .mobile-only { display: block !important; }
+            #global-bg {
+                animation: none !important; 
+            }
+            .hero-webp {
+                transform: translateZ(0); 
+                will-change: transform;
+                backface-visibility: hidden; /* 防止渲染闪烁 */
+            }
+            #bg-overlay {
+                /* 之前是复杂的渐变，手机端计算费力，直接换成统一透明度纯黑 */
+                background: rgba(10, 10, 12, 0.8) !important; 
+            }
+            #sidebar {
+                width: 100%; height: 60px; flex-direction: row; align-items: center; justify-content: space-between;
+                border-right: none; border-bottom: 1px solid var(--border-color); padding: 0 15px; box-sizing: border-box;
+            }
+            .logo-area { padding: 0; border: none; display: flex; align-items: center; gap: 15px; }
+            .logo-area h1 { font-size: 20px; }
+            .logo-area p { display: none; }
+            
+            /* [修改] 启用手机端顶部小巧的 BGM 按钮 */
+            .mobile-top-bgm { 
+                display: block; 
+                font-size: 10px; 
+                border: 1px solid var(--border-color); 
+                padding: 3px 8px; 
+                border-radius: 12px; 
+                font-family: sans-serif;
+                letter-spacing: 1px;
+            }
+            
+            .sidebar-footer { display: none; }
+
+            .nav-menu {
+                flex-direction: row; padding: 0; margin-left: auto; flex: unset;
+                overflow-x: auto; overflow-y: hidden; white-space: nowrap;
+                -ms-overflow-style: none; scrollbar-width: none;
+            }
+            .nav-menu::-webkit-scrollbar { display: none; }
+            .nav-item { padding: 0 10px; font-size: 14px; height: 60px; align-items: center; border-bottom: 2px solid transparent; }
+            .nav-item.active::before { display: none; }
+            .nav-item.active { border-bottom-color: var(--primary); background: transparent; }
+            .nav-item:hover { padding-left: 10px; background: transparent; color: var(--primary); }
+            .nav-item span.en { display: none; }
+
+            #main-content { margin-left: 0; padding-top: 60px; }
+            #bg-overlay { background: rgba(10,10,12,0.85); }
+
+            .hero-section { padding: 40px 20px; text-align: center; align-items: center; justify-content: center; }
+            .hero-title { font-size: 2.2rem; }
+            .hero-subtitle { font-size: 1rem; }
+            .content-section { padding: 40px 20px; }
+            .section-title { font-size: 24px; flex-direction: column; align-items: flex-start;}
+            .section-title span { margin-left: 0; margin-top: 5px; font-size: 12px; }
+
+            .news-item { flex-direction: column; align-items: flex-start; }
+            .news-date { margin-bottom: 5px; }
+            .project-grid { grid-template-columns: 1fr; gap: 20px; }
+
+            .special-event-card { flex-direction: column; }
+            .special-event-card .project-img { width: 100%; height: 200px; min-height: unset; border-right: none; border-bottom: 2px solid var(--primary); }
+            .special-event-card .project-info { width: 100%; padding: 25px; }
+            .special-event-card .project-info h3 { font-size: 24px; }
+            
+            /* [修改] 优化手机端底部友链，改为标签样式平铺排版 */
+            .global-footer { padding: 25px 15px; }
+            .friendly-links { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+            .friendly-links .link-label { width: 100%; text-align: center; margin: 0 0 8px 0; font-size: 12px; }
+            .friendly-links a { 
+                background: rgba(255,255,255,0.05); border: 1px solid #333; 
+                padding: 4px 10px; border-radius: 4px; font-size: 11px; margin: 0;
+            }
+        }
+            .worldview-hero {
+            width: 100%; height: 300px;
+            background: rgba(20, 20, 25, 0.8);
+            border: 1px dashed #555; border-radius: 12px;
+            margin-bottom: 40px; display: flex; align-items: center; justify-content: center;
+            color: #666; font-size: 14px; letter-spacing: 2px;
+            background-size: cover; background-position: center;
+        }
+            .worldview-quote {
+            font-size: 18px; color: var(--primary); font-style: italic;
+            border-left: 4px solid var(--primary); padding: 20px;
+            margin-bottom: 40px; line-height: 1.6;
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+            border-radius: 0 8px 8px 0;
+        }
+            .worldview-subtitle {
+            font-size: 22px; color: #fff; margin: 50px 0 20px 0;
+            display: flex; align-items: center; gap: 10px;
+        }
+            .worldview-subtitle::before {
+            content: ''; display: block; width: 6px; height: 22px;
+            background: var(--primary); border-radius: 3px;
+        }
+            .worldview-text p {
+            font-size: 15px; color: #bbb; line-height: 2.2; /* 超大行距，阅读不累 */
+            margin-bottom: 20px; text-align: justify;
+        }
+            .worldview-inline-img {
+            width: 100%; border-radius: 8px; margin: 30px 0;
+            border: 1px solid #333;
+        }
+        /* === Extra：外链卡片与标签分类 === */
+        .extra-filter {
+            display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px;
+        }
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid #333;
+            color: #aaa; padding: 6px 15px; border-radius: 20px;
+            font-size: 13px; cursor: pointer; transition: 0.3s;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--primary); color: #fff; border-color: var(--primary);
+        }
+        .extra-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;
+        }
+        .extra-card {
+            background: rgba(20, 20, 25, 0.6); border: 1px solid #333; border-radius: 8px;
+            padding: 15px 20px; display: flex; align-items: center; justify-content: space-between;
+            text-decoration: none; transition: 0.3s; cursor: pointer;
+        }
+        .extra-card:hover {
+            background: rgba(30, 30, 35, 0.8); border-color: var(--primary); transform: translateY(-3px);
+        }
+        .extra-card-left { display: flex; flex-direction: column; gap: 8px; }
+        .extra-title { color: #fff; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .extra-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+        .extra-tag { background: rgba(255,255,255,0.1); color: #ccc; font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+        .extra-arrow { color: #555; font-size: 18px; transition: 0.3s; }
+        .extra-card:hover .extra-arrow { color: var(--primary); transform: translateX(3px); }
+    </style>
+</head>
+<body>
+
+
+    <div id="global-bg"></div>
+    <div id="bg-overlay"></div>
+
+    <div id="age-gate">
+        <div class="age-gate-box">
+            <h1>WARNING</h1>
+            <p>本网站包含视觉小说与 Galgame 相关的深度资讯。<br>
+               <strong>「あなたは18歳以上ですか？」</strong></p>
+            <div class="btn-group-age">
+                <button id="btn-yes">YES / はい</button>
+                <button id="btn-no">NO / いいえ</button>
+            </div>
+        </div>
+    </div>
+
+    <nav id="sidebar">
+        <div class="logo-area">
+            <h1>Zuel<span>Gal</span>.</h1>
+            <div class="mobile-top-bgm bgm-toggle-btn">♪ OFF</div>
+            <p>中南大视觉小说社</p>
+        </div>
+        
+        <div class="nav-menu">
+            <a href="#" class="nav-item active" data-view="home">入口 <span class="en">TOP</span></a>
+            <a href="#" class="nav-item" data-view="worldview">世界观 <span class="en">WORLDVIEW</span></a>
+            <a href="#" class="nav-item" data-view="cast">登场人物 <span class="en">CHARACTER</span></a>
+            <a href="#" class="nav-item" data-view="projects">相关企划 <span class="en">PROJECTS</span></a>
+            <a href="#" class="nav-item" data-view="warehouse">资料仓库 <span class="en">ARCHIVE</span></a>
+            <a href="#" class="nav-item" data-view="extra">？<span class="en">EXTRA</span></a>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="bgm-toggle-btn" style="margin-bottom: 15px;">♪ BGM: OFF</div>
+            <div>&copy; 2026 ZuelGal. All rights reserved.</div>
+        </div>
+    </nav>
+
+    <main id="main-content">
+        <div id="view-container" class="view-container">
+            </div>
+
+        <footer class="global-footer">
+            <div class="friendly-links">
+                <span class="link-label">友情链接</span>
+                <a href="https://space.bilibili.com/20942465?spm_id_from=333.337.search-card.all.click" target="_blank">武大漫协</a>
+                <a href="https://space.bilibili.com/382680998?spm_id_from=333.337.0.0" target="_blank">风蓝动漫社</a>
+                <a href="https://space.bilibili.com/10284760?spm_id_from=333.337.0.0" target="_blank">东西动漫社</a>
+            </div>
+            <div class="copyright">&copy; 2026 ZuelGal. All rights reserved. 穗织ICP备0721号</div>
+        </footer>
+    </main>
+
+<script>
+        // === 1. Age Gate 与 BGM 控制 ===
+        const ageGate = document.getElementById('age-gate');
+        const audioHTML = `<audio id="global-bgm" src="/assets/You.mp3" loop preload="none"></audio>`;
+        document.body.insertAdjacentHTML('afterbegin', audioHTML);
+        const bgm = document.getElementById('global-bgm');
+        const bgmToggleBtns = document.querySelectorAll('.bgm-toggle-btn');
+        let isPlaying = false;
+
+        if(sessionStorage.getItem('verified')) {
+            ageGate.style.display = 'none';
+        }
+
+        document.getElementById('btn-yes').addEventListener('click', () => {
+            sessionStorage.setItem('verified', 'true');
+            ageGate.style.opacity = '0';
+            setTimeout(() => ageGate.style.display = 'none', 1000);
+            bgm.volume = 0.5;
+            bgm.play().then(() => {
+                isPlaying = true;
+                updateBgmUI();
+            }).catch(e => console.log('BGM blocked by browser'));
+        });
+
+        document.getElementById('btn-no').addEventListener('click', () => {
+            window.location.href = "https://www.bilibili.com/video/BV1Ba41zGEdF";
+        });
+
+        function updateBgmUI() {
+            bgmToggleBtns.forEach(btn => {
+                if(btn.classList.contains('mobile-top-bgm')) {
+                    btn.innerText = isPlaying ? '♪ ON' : '♪ OFF';
+                    btn.style.borderColor = isPlaying ? 'var(--primary)' : 'rgba(255, 255, 255, 0.15)';
+                } else {
+                    btn.innerText = isPlaying ? '♪ BGM: ON' : '♪ BGM: OFF';
+                }
+                btn.style.color = isPlaying ? 'var(--primary)' : '#888888';
+            });
+        }
+
+        bgmToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if(isPlaying) { bgm.pause(); } else { bgm.play(); }
+                isPlaying = !isPlaying;
+                updateBgmUI();
+            });
+        });
+
+        // === 2. 核心改造：独立的数据中心 ===
+        
+        // [企划方框数据]
+        const projectsData = [
+            {
+                status: "MAINTENANCE 架构升级中", // 把标签改成维护中
+                statusClass: "status-ended", // 复用之前的灰色标签样式
+                img: "/assets/backup/sora01.png", 
+                imgStyle: "filter: brightness(0.5);", // 让图片变暗一点，更有封锁感
+                title: "十二菜器：年度作品评选",
+                desc: "基于全新 YmGal API 构建。从浩瀚的档案库中，选出你心目中的十二部神作。（当前区块正在进行视觉重构，访问路径暂已冻结）",
+                // 👇 核心魔法：把真正的网址换成一段 JavaScript 弹窗代码
+                link: "javascript:alert('【系统拦截】\\n十二菜器企划正在进行架构升级与页面重构。\\n访问权限暂暂时封锁');"
+            },
+            {
+                status: "ARCHIVE 已结束",
+                statusClass: "status-ended", 
+                img: "/assets/bg1.jpg",
+                imgStyle: "filter: grayscale(50%);", 
+                title: "第一届角色人气总选举",
+                desc: "2025年秋季特别活动。检索 VNDB 数据库，为你最爱的女性角色投上神圣的一票。",
+                link: "/events/character_vote/index.php"
+            }
+        ];
+
+        const renderProjectCards = () => {
+            return projectsData.map(item => `
+                <div class="project-card" onclick="window.location.href='${item.link}'">
+                    <div class="status-badge ${item.statusClass}">${item.status}</div>
+                    <div class="project-img" style="background-image: url('${item.img}'); ${item.imgStyle}"></div>
+                    <div class="project-info">
+                        <h3>${item.title}</h3>
+                        <p>${item.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        // [资料仓库数据 - 新增！]
+        const archiveData = [
+            {
+                cover: "https://assets-1316693082.cos.ap-nanjing.myqcloud.com/assets/new_easter_egg.jpg",
+                title: "【VNFES-视觉小说的今后和将来企划】中南财经政法大学NTR交牛同好会历史",
+                summary: "丛雨为什么要保留自己在猪栏菜专当看板娘的历史？那是因为...",
+                date: "2025-12-25",
+                author: "ZuelGal 编辑部",
+                link: "/articles/index.html?id=001"
+            },
+            {
+                cover: "",
+                title: "【推荐】试了Project: Zuelphoria的demo，我必须说点什么",
+                summary: "上周群主在群里发了Project:Zuelphoria的demo，让我们几个帮忙测试。说实话本来没抱太高期望，同人社团做游戏嘛，能有个七八分像样就不错了。但打开之后玩了四十多分钟，我愣是没缓过神。妈呀，这完成度也太高了...",
+                date: "2018-09-15",
+                author: "211.69.161.30",
+                link: "/kwaidan.html"
+            },
+        ];
+        // === 5. Extra 板块数据与过滤逻辑 ===
+        const extraData = [
+            { title: "欢迎来到特调局", url: "https://youhiya.itch.io/welcome-to-sib", tags: ["摸鱼", "ARG"], emoji: "📁" },
+            { title: "榕树信箱", url: "https://roastfish042.neocities.org/tree", tags: ["摸鱼", "ARG"], emoji: "📁" },
+            { title: "缓存溢出", url: "http://www.unizhang.icu", tags: ["摸鱼", "ARG"], emoji: "📁" },
+            { title: "圣希尔达的回响", url: "https://eecdpq5oxzo5.space.minimaxi.com", tags: ["摸鱼", "ARG"], emoji: "📁" },
+            { title: "三川米粉店", url: "http://www.berrysignalscmfd.top", tags: ["摸鱼", "ARG"], emoji: "🍜" },
+            { title: "保亚保健有限公司", url: "https://wanwuyongyuan.github.io/baoya", tags: ["摸鱼", "ARG"], emoji: "💊" },
+            { title: "永安温泉度假酒店", url: "https://yongan0504.rth2.xyz", tags: ["摸鱼", "ARG"], emoji: "♨️" },
+            { title: "大学生登山失踪事件", url: "https://missing.shiroki-y.top/introduction.html", tags: ["摸鱼", "ARG"], emoji: "⛰️" },
+            { title: "逃离宏业电子厂", url: "https://www.escapefromhongye.xyz/super-broccoli", tags: ["摸鱼", "ARG"], emoji: "🏭" },
+            { title: "民间旮旯ADV", url: "https://humihumi.com/", tags: ["摸鱼", "ADV"], emoji: "📖" },
+            { title: "地铁抢座大作战", url: "https://www.escapefromhongye.xyz/hub111", tags: ["摸鱼", "SLG"], emoji: "🚇" },
+            { title: "青椒模拟器", url: "https://tenure-plus.feedscription.com/?mode=local&lang=en", tags: ["摸鱼", "SLG"], emoji: "🏫" },
+            { title: "读博模拟器", url: "https://research.wmz.ninja/projects/phd/index.zh-hans.html", tags: ["摸鱼", "SLG"], emoji: "🎓" },
+            { title: "互联网大厂模拟器", url: "https://www.bigtech-simulator.com/", tags: ["摸鱼", "SLG"], emoji: "🏢" },
+            { title: "鳌太线模拟器", url: "https://cyberhiking.com/", tags: ["摸鱼", "SLG"], emoji: "🏕️" },
+            { title: "数回", url: "https://cn.puzzle-loop.com/", tags: ["天才", "puzzle"], emoji: "🧠" },
+            { title: "数邻", url: "https://cn.puzzle-dominosa.com/", tags: ["天才", "puzzle"], emoji: "🧠" },
+            { title: "点灯", url: "https://cn.puzzle-light-up.com/", tags: ["天才", "puzzle"], emoji: "💡" },
+            { title: "帐篷", url: "https://cn.puzzle-light-up.com/", tags: ["天才", "puzzle"], emoji: "⛺" },
+            { title: "扫雷", url: "https://cn.puzzle-minesweeper.com/minesweeper-5x5-easy/", tags: ["庸才", "puzzle"], emoji: "💣" },
+            { title: "CYMath", url: "https://www.cymath.com/cn/", tags: ["做题", "PC"], emoji: "📐" },
+            { title: "刷单词", url: "https://qwerty.kaiyi.cool/", tags: ["做题", "PC"], emoji: "🔤" },
+            { title: "游戏九宫格", url: "https://my9.shatranj.space/game", tags: ["摸鱼"], emoji: "🎮" },
+            { title: "猜盐填番", url: "https://xiaoce.fun/fillanime", tags: ["摸鱼"], emoji: "📺" },
+            { title: "猜盐辩论", url: "https://xiaoce.fun/debate", tags: ["摸鱼"], emoji: "🗣️" },
+            { title: "猜角色", url: "https://xiaoce.fun/guesscute", tags: ["摸鱼"], emoji: "👤" },
+            { title: "豚豚师兄的复习资料", url: "https://pan.baidu.com/s/1kF6zn-8kAVLFALOgpPbDSA?pwd=1n2a", tags: ["做题","天才"], emoji: "🤔" }
+        ];
+
+        // 渲染单张卡片的机器
+        const renderExtraCards = (data) => {
+            if(data.length === 0) return `<div style="color:#aaa;">此分类下暂无档案...</div>`;
+            return data.map(item => `
+                <a href="${item.url}" target="_blank" class="extra-card">
+                    <div class="extra-card-left">
+                        <div class="extra-title">${item.emoji} ${item.title}</div>
+                        <div class="extra-tags">
+                            ${item.tags.map(t => `<span class="extra-tag">${t}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="extra-arrow">➔</div>
+                </a>
+            `).join('');
+        };
+
+        // 核心：点击标签时的过滤机制！
+        window.filterExtra = function(selectedTag) {
+            // 1. 让被点击的按钮亮起来，其他的变灰
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if(btn.getAttribute('data-tag') === selectedTag) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            // 2. 启动数据漏斗：如果选了全部就返回所有，否则只保留含有该 Tag 的数据
+            const filteredData = selectedTag === 'all' 
+                ? extraData 
+                : extraData.filter(item => item.tags.includes(selectedTag));
+
+            // 3. 把过滤后的数据重新渲染到页面上
+            document.getElementById('extra-container').innerHTML = renderExtraCards(filteredData);
+        };
+        // [登场人物数据 - 新增！]
+        const castData = [
+            {
+                name: "白羽 Shiroha",
+                role: "Robot",
+                avatar: "/assets/profile/shiroha.jpg", // 替换为真实头像链接
+                desc: "神秘的、由外部人士部署的QQ机器人，本群由盛转衰的标志，只在周末上线。"
+            },
+            {
+                name: "丛雨 Murasame",
+                role: "Robot/前·看板娘",
+                avatar: "/assets/profile/murasame.jpg", // 替换为真实头像链接
+                desc: "时代的眼泪，从风光无限到被无情抛弃只过了不到一年。"
+            },
+            {
+                name: "blur  ",
+                role: "群主/创始人",
+                avatar: "/assets/profile/blur.jpg",
+                desc: "神秘的20级财税师兄，没人知道为什么他能在2014年创建本群。"
+            },
+            {
+                name: "神明 Kamisama ",
+                role: "???",
+                avatar: "/assets/profile/yinuo.png",
+                desc: "不愿意透露姓名的神明，与后面的妖魔鬼怪划清界限，不同其沆瀣一气。"
+            },
+            {
+                name: "Xianer  ",
+                role: "管理/傀儡",
+                avatar: "/assets/profile/xianer.jpg",
+                desc: "绝望地看着一切崩坏，只能靠后人的智慧了，你群未来怎么样只有天知道..."
+            },
+            {
+                name: "无涯  ",
+                role: "",
+                avatar: "/assets/profile/wuya.jpg",
+                desc: "已毕业土木国gal师兄｜三次元现充GAL男主"
+            },
+            {
+                name: "顽皮汪汪  ",
+                role: "",
+                avatar: "/assets/profile/wanpiwangwang.jpg",
+                desc: "ZUEL第二神人｜悬疑猎奇向受益者|已成功以坏结局通关现实高恋"
+            },
+            {
+                name: "rumpen  ",
+                role: "",
+                avatar: "/assets/profile/rumpen.jpg",
+                desc: "《小孩姐要考中南财经政法大学！》第一作者|木柜子痴|武昌土著 |江夏留子|"
+            },
+            {
+                name: "和田  ",
+                role: "",
+                avatar: "/assets/profile/hetian.jpg",
+                desc: "insult爱好者"
+            }
+        ];
+
+        // 自动生成人物档案卡的机器
+        const renderCastCards = () => {
+            return castData.map(item => `
+                <div class="cast-card">
+                    <div class="cast-avatar" style="background-image: url('${item.avatar}');"></div>
+                    <div class="cast-info">
+                        <h3 class="cast-name">${item.name}</h3>
+                        <div class="cast-role">${item.role}</div>
+                        <div class="cast-desc">${item.desc}</div>
+                    </div>
+                </div>
+            `).join('');
+        };
+        
+        const renderArchiveList = () => {
+            return archiveData.map(item => `
+                <div class="archive-item" onclick="window.location.href='${item.link}'">
+                    <div class="archive-cover" style="background-image: url('${item.cover}');"></div>
+                    <div class="archive-content">
+                        <div>
+                            <h3 class="archive-title">${item.title}</h3>
+                            <div class="archive-summary">${item.summary}</div>
+                        </div>
+                        <div class="archive-meta">
+                            <span>📅 ${item.date}</span>
+                            <span>✍️ ${item.author}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        // === 3. SPA 视图模板 ===
+        const views = {
+            home: `
+            <div class="hero-section">
+                <video class="hero-video pc-only" id="pc-video" autoplay loop muted playsinline>
+                    <source data-src="/assets/hero-pc.mp4" type="video/mp4">
+                </video>
+                <img class="hero-webp mobile-only" src="/assets/hero-mobile-static.jpg" alt="静态背景" style="z-index: 0;">
+                <img class="hero-webp mobile-only" src="/assets/hero-mobile.webp" alt="动态背景" style="z-index: 1;">
+                <div class="hero-video-overlay" style="z-index: 2;"></div> 
+                <h2 class="hero-title" style="z-index: 3; position: relative;">在这虚构的故事中，<br>寻找真实的对象。</h2>
+                <div class="hero-subtitle" style="z-index: 3; position: relative;">ZuelGal / 中南大视觉小说社官方入口</div>
+                <div class="scroll-down" style="z-index: 3;">SCROLL DOWN</div>
+            </div>
+            <div class="content-section">
+                <h2 class="section-title">最新情报 <span>UPDATE & NEWS</span></h2>
+                <ul class="news-list">
+                    <li class="news-item"><div class="news-date">2026.03.09</div><div class="news-tag">活动</div><div class="news-title">「十二菜器」年度作品大赏即将开启。</div></li>
+                    <li class="news-item"><div class="news-date">2026.02.26</div><div class="news-tag">系统</div><div class="news-title">官方网站 v2.0 全新架构上线，支持移动端自适应。</div></li>
+                </ul>
+            </div>
+            <div class="content-section" style="padding-bottom: 80px;">
+                <h2 class="section-title">焦点企划 <span>SPECIAL EVENT</span></h2>
+                <div class="special-event-card">
+                    <div class="project-img" style="background-image: url('/assets/subarashi01.png');"></div>
+                    <div class="project-info">
+                        <span style="color: var(--primary); font-weight: bold; margin-bottom: 10px; font-size: 12px; letter-spacing: 2px;">PREPARING...</span>
+                        <h3 style="font-size: 32px; margin-bottom: 20px; line-height: 1.3;">十二菜器<br>YmGal 联库企划</h3>
+                        <p>这是一场属于现充Zueler的狂欢。平台接入月幕 Gal 数据库，开启全新的年度神作评选。</p>
+                        <button onclick="loadView('projects')" style="margin-top: 30px; background: transparent; border: 1px solid #fff; color: #fff; padding: 10px 20px; width: 150px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.background='var(--primary)'" onmouseout="this.style.background='transparent'">进入企划枢纽 →</button>
+                    </div>
+                </div>
+            </div>
+            `,
+            projects: `
+                <div class="content-section" style="min-height: 100vh; padding-top: 100px;">
+                    <h2 class="section-title">相关企划 <span>PROJECTS & EVENTS</span></h2>
+                    <p style="color: #aaa; margin-bottom: 40px; line-height: 2;">记录社团举办的每一次大型互动企划，请选择事件线。</p>
+                    <div class="project-grid">
+                        ${renderProjectCards()}
+                    </div>
+                </div>
+            `,
+            worldview: `
+                <div class="content-section" style="min-height: 100vh; padding-top: 100px;">
+                    <h2 class="section-title">世界观 <span>WORLDVIEW</span></h2>
+                    
+                    <div class="worldview-hero" style="background-image: url('/assets/wenbolou.png');">
+                    </div>
+
+                    <div class="worldview-quote">
+                        “在我们习以为常的日常背后，隐藏着由真实与虚幻编织的非日常边界。”<br>
+                    </div>
+
+                    <div class="worldview-text">
+                        <h3 class="worldview-subtitle">背景设定</h3>
+                        <p>猪栏菜专Galgame同好会似乎成立于2014年秋。<p>
+                        <p> 最初只是一群喜欢Galgame的人在QQ上拉了个群，互相分享资源，聊聊刚推完的作品。后来有人提议做个网站，把大家写的游戏推荐、鉴赏杂谈、资料整理放上去，于是网站就这么搭起来了。境外服务器，没挂学校任何部门，纯粹是私人性质的小站。首页放了张丛雨和白羽的图，背景是文波楼，看着还行。听说2017年前后，受《高考恋爱一百天》《三色绘恋》等国产Galgame的启发，群里开始有人提议自己做游戏。当时的管理是15级的师兄，热情很高，拉了几个人组了个小团队，项目代号叫“Project: Zuelronobox”什么的。据说是个悬疑向旮旯game，当年还放出了一个试玩demo，不过目前似乎已经失传，后来项目怎么样了，没人说得清，毕竟现在的群主都是2020年入学的，之前的事情已经无从考证力~</p>
+                        <p>这么多年过去，群里的人来来去去。有人毕业了，有人退坑了，偶尔有新成员加进来。网站还开着，但文章专栏里的大部分投稿都被删了，不知道为什么只剩下一篇。注册功能好像也关了，以后看看能不能弄回来吧。</p>
+
+                        <h3 class="worldview-subtitle">同好会成员守则（2015.9修订）</h3>
+                        <p>关于入群</p>
+                        <p>一、本会采取邀请制入群。新成员需由现有成员推荐，经管理员审核后方可加入。</p>
+                        <p>二、入群申请需填写以下信息：昵称、入学年份、常用邮箱、推荐人。信息不全者不予通过。</p>
+                        <p>三、如遇以下情况，管理员有权拒绝申请且无需说明理由：申请者填写的入学年份早于2014年；申请者填写的毕业年份晚于当前年份；申请者填写的推荐人不存在于现有成员列表中。</p>
+                        <p>关于群聊</p>
+                        <p>四、本会主要活动形式为线上讨论。每日0:00至6:00为静默时段，在此期间全员禁言。</p>
+                        <p>五、静默时段内如收到任何私聊消息，无论内容为何，均不予回复。次日可向管理员报备。</p>
+                        <p>六、每年9月前后，群内可能出现陌生账号发言，内容多为询问“这里有资源吗”或“这里是什么群”。遇此情况，所有成员不得回复。当日群聊将由系统自动开启全员禁言。</p>
+                        <p>关于文章专栏</p>
+                        <p>七、文章专栏收录成员撰写的游戏推荐、鉴赏杂谈、资料整理。投稿请发送至管理员邮箱，审核通过后由管理员统一发布。</p>
+                        <p>八、已发布文章不接受修改或删除。如作者退群或毕业，文章仍保留于专栏中。</p>
+                        <p>九、如发现某篇文章的发布时间早于2014年或晚于当前日期，应视为页面显示异常，可尝试刷新页面。如刷新后仍显示异常，应关闭页面。</p>
+                        <p>十、文章专栏不设评论区，不统计访问量。如页面下方出现任何留言或数字，应视为页面显示错误，忽略即可。</p>
+                        <p>关于线下</p>
+                        <p>十一、本会原则上不组织线下活动。如确有需要，需提前一周在群内公告。活动地点仅限于校内公共场所。</p>
+                        <p>十二、如在校内遇见自称是本会成员的人邀请单独见面，无论对方是否认识，均应拒绝并立即离开现场。事后可向管理员核实。</p>
+                        <p>关于退群</p>
+                        <p>十三、成员退群自由。退群前请手动删除所有聊天记录。若有其余紧急事项，请联系管理员。</p>
+                        <p>附则</p>
+                        <p>十四、本守则每年修订一次，修订版发布则旧版守则自动废止。</p>
+                        <p>十五、如有疑问，可在群内提出。如无人回应，说明没有问题。</p>
+                    </div>
+                </div>
+            `,
+            cast: `
+                <div class="content-section" style="min-height: 100vh; padding-top: 100px;">
+                    <h2 class="section-title">登场人物 <span>Character</span></h2>
+                    <p style="color:#aaa; margin-bottom: 40px; line-height: 2;">这里是英灵殿，谁都可以进来。</p>
+                    
+                    <div class="cast-grid">
+                        ${renderCastCards()}
+                    </div>
+                </div>
+            `,
+            warehouse: `
+                <div class="content-section" style="min-height: 100vh; padding-top: 100px;">
+                    <h2 class="section-title">资料仓库 <span>ARCHIVE</span></h2>
+                    <p style="color: #aaa; margin-bottom: 40px; line-height: 2;">收录社团优质专栏、漫评、攻略与剧情解析。</p>
+                    <div class="archive-list">
+                        ${renderArchiveList()}
+                    </div>
+                </div>
+            `,
+            extra: `
+                <div class="content-section" style="min-height: 100vh; padding-top: 100px;">
+                    <h2 class="section-title">工具与神秘链接 <span>EXTRA</span></h2>
+                    <p style="color: #aaa; margin-bottom: 30px; line-height: 2;">收录各种奇妙的摸鱼站点、ARG 解谜档案与实用工具。请选择你的权限终端。</p>
+                    
+                    <div class="extra-filter">
+                        <button class="filter-btn active" data-tag="all" onclick="filterExtra('all')">🌐 全部档案</button>
+                        <button class="filter-btn" data-tag="ARG" onclick="filterExtra('ARG')">🕵️ ARG</button>
+                        <button class="filter-btn" data-tag="SLG" onclick="filterExtra('SLG')">🎮 SLG</button>
+                        <button class="filter-btn" data-tag="puzzle" onclick="filterExtra('puzzle')">🧩 Puzzle</button>
+                        <button class="filter-btn" data-tag="天才" onclick="filterExtra('天才')">💡 天才限定</button>
+                        <button class="filter-btn" data-tag="做题" onclick="filterExtra('做题')">📝 做题</button>
+                        <button class="filter-btn" data-tag="摸鱼" onclick="filterExtra('摸鱼')">🐟 摸鱼专区</button>
+                    </div>
+
+                    <div class="extra-grid" id="extra-container">
+                        ${renderExtraCards(extraData)}
+                    </div>
+                </div>
+            `
+        };
+
+        // === 4. 路由控制 ===
+        const viewContainer = document.getElementById('view-container');
+        const mainContentArea = document.getElementById('main-content');
+        const navItems = document.querySelectorAll('.nav-item');
+
+        function loadView(viewName) {
+            viewContainer.classList.add('fade');
+            setTimeout(() => {
+                viewContainer.innerHTML = views[viewName] || '<h1>404 Not Found</h1>';
+                mainContentArea.scrollTop = 0;
+                
+                navItems.forEach(nav => nav.classList.remove('active'));
+                const activeNav = document.querySelector(`.nav-item[data-view="${viewName}"]`);
+                if(activeNav) activeNav.classList.add('active');
+                
+                viewContainer.classList.remove('fade');
+
+                if (window.innerWidth > 850) {
+                    const pcVideo = document.getElementById('pc-video');
+                    if (pcVideo) {
+                        const source = pcVideo.querySelector('source');
+                        source.src = source.getAttribute('data-src');
+                        pcVideo.load();
+                        pcVideo.play().catch(e => console.warn(e));
+                    }
+                }
+            }, 400); 
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetView = item.getAttribute('data-view');
+                if (targetView) loadView(targetView);
+            });
+        });
+
+        loadView('home');
+    </script>
+</body>
+</html>
