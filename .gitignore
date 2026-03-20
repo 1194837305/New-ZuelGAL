@@ -1,0 +1,17 @@
+# 忽略数据库配置文件（保护密码）
+user_config.php
+config.php
+
+# 忽略用户上传的头像（保护隐私和节省空间）
+uploads/
+assets/profile/
+
+# 忽略系统文件
+.DS_Store
+Thumbs.db
+
+*.tar.gz
+*.rar
+*.zip
+*.7z
+backup/
