@@ -1,7 +1,13 @@
 <?php
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // 打开报错，方便排查问题
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+
 
 // 1. 引入配置文件 (必须放在最前面，否则无法连接数据库！)
 $config_path = '../../config.php';
@@ -635,5 +641,300 @@ window.addEventListener('load', () => {
             if(pwd) window.location.href = 'admin_caiqi.php?pwd=' + pwd;
         }
     </script>
+    
+<div id="danmaku-track" style="position: fixed; top: 0; left: 0; width: 100%; height: 50%; pointer-events: none; z-index: 9998; overflow: hidden;"></div>
+
+<div id="danmaku-history">
+    <div id="history-header" onclick="toggleDanmakuHistory()" title="点击 缩起/展开 日志">
+        <span class="header-title">📜 战术通信日志</span>
+        <span id="history-toggle-icon">▲</span>
+    </div>
+    <div id="history-content">
+        <div class="history-item" style="color: var(--primary); border-color: var(--primary);">
+            [系统广播]: 弹幕通信网络已连接，双轨通信启动...
+        </div>
+    </div>
+</div>
+
+<?php if(isset($_SESSION['user_id'])): ?>
+    <div id="danmaku-controller">
+        <input type="text" id="danmaku-input" placeholder="输入全频段广播..." maxlength="50" onkeypress="if(event.keyCode==13) sendDanmaku()">
+        <button onclick="sendDanmaku()" id="danmaku-btn">发射</button>
+    </div>
+<?php else: ?>
+    <div id="danmaku-controller" class="unauth-controller" onclick="openAuthModal('login')">
+        <span>⚠ 接入系统以发送弹幕</span>
+    </div>
+<?php endif; ?>
+
+
+<style>
+/* 飞行弹幕基础样式 */
+.danmaku-item {
+    position: absolute;
+    right: -100%;
+    white-space: nowrap;
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 8px rgba(0,0,0,0.8);
+    animation: danmaku-move 9s linear forwards;
+}
+
+@keyframes danmaku-move {
+    0% { right: -100%; transform: translateX(100%); }
+    100% { right: 100%; transform: translateX(0); }
+}
+
+/* 历史记录墙容器 */
+#danmaku-history {
+    position: fixed;
+    bottom: 80px; 
+    left: 20px;
+    width: 280px;
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    max-height: 200px;
+    transition: max-height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden;
+}
+
+/* 手柄栏 */
+#history-header {
+    background: rgba(10, 10, 12, 0.9);
+    padding: 6px 12px;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #aaa;
+    border-bottom: 1px solid #333;
+    user-select: none;
+    transition: background 0.3s;
+}
+#history-header:hover { background: rgba(20, 20, 25, 1); }
+#history-toggle-icon { transition: transform 0.4s; color: #888; }
+
+/* 内容滚动区 */
+#history-content {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 20%);
+}
+
+/* 缩起状态 */
+#danmaku-history.collapsed { max-height: 28px; }
+#danmaku-history.collapsed #history-toggle-icon { transform: rotate(180deg); }
+#danmaku-history.collapsed #history-content { -webkit-mask-image: none; mask-image: none; }
+
+/* 单条日志 */
+.history-item {
+    background: rgba(10, 10, 12, 0.7);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #ddd;
+    border-left: 2px solid #555;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease;
+    word-break: break-all;
+}
+.history-name { font-weight: bold; color: #888; margin-right: 5px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 发射器 PC 端 */
+#danmaku-controller {
+    position: fixed;
+    bottom: 25px;
+    left: 20px;
+    display: flex;
+    gap: 10px;
+    background: rgba(15, 15, 20, 0.9);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    z-index: 9999;
+}
+#danmaku-input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    outline: none;
+    width: 220px;
+    font-size: 14px;
+}
+#danmaku-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.unauth-controller {
+    justify-content: center;
+    cursor: pointer;
+    border-color: var(--primary) !important;
+    background: rgba(201, 23, 30, 0.1) !important;
+    color: var(--primary);
+    font-weight: bold;
+    font-size: 13px;
+}
+
+/* 📱 移动端绝对适配 */
+@media (max-width: 768px) {
+    #danmaku-controller {
+        left: 0; bottom: 0; width: 100%;
+        border-radius: 0; border: none;
+        padding: 10px 15px; box-sizing: border-box;
+        background: rgba(10, 10, 12, 0.98);
+    }
+    #danmaku-input { width: 100%; flex: 1; }
+    #danmaku-history {
+        bottom: 60px; left: 10px; width: 75%; max-height: 120px;
+    }
+    #danmaku-history.collapsed { max-height: 28px; }
+    .danmaku-item { font-size: 16px; animation-duration: 7s; }
+}
+</style>
+
+
+<script>
+// === 双引擎弹幕核心 JS ===
+let lastDanmakuId = 0;
+const pageType = window.location.pathname.includes('tierlist.php') ? 'tierlist' : 'lobby'; 
+const track = document.getElementById('danmaku-track');
+const historyBox = document.getElementById('danmaku-history');
+const historyContent = document.getElementById('history-content');
+const toggleIcon = document.getElementById('history-toggle-icon');
+
+const myNickname = "<?php echo isset($_SESSION['nickname']) ? addslashes($_SESSION['nickname']) : ''; ?>";
+
+let danmakuPool = []; 
+let poolIndex = 0;
+
+// 控制缩起/展开
+function toggleDanmakuHistory() {
+    historyBox.classList.toggle('collapsed');
+    if (historyBox.classList.contains('collapsed')) {
+        toggleIcon.innerText = '▼';
+    } else {
+        toggleIcon.innerText = '▲';
+        historyContent.scrollTop = historyContent.scrollHeight;
+    }
+}
+
+// 写入日志墙
+function appendHistory(name, text, isMine = false) {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    if (isMine) div.style.borderLeftColor = '#FFD700';
+    div.innerHTML = `<span class="history-name">${name}:</span><span>${text}</span>`;
+    
+    historyContent.appendChild(div);
+    
+    // 收到新消息自动展开
+    if (historyBox.classList.contains('collapsed')) {
+        toggleDanmakuHistory();
+    }
+    historyContent.scrollTop = historyContent.scrollHeight;
+}
+
+// 飞行弹幕渲染
+function renderFlyingDanmaku(name, text, isMine = false) {
+    const div = document.createElement('div');
+    div.className = 'danmaku-item';
+    
+    if (isMine) {
+        div.style.color = '#FFD700';
+        div.style.border = '1px solid rgba(255, 215, 0, 0.5)';
+        div.style.padding = '0 10px';
+        div.style.borderRadius = '20px';
+        div.style.background = 'rgba(0,0,0,0.5)';
+    }
+
+    div.innerText = text; 
+    const lane = Math.floor(Math.random() * 10);
+    div.style.top = (lane * 10) + '%';
+    
+    track.appendChild(div);
+    setTimeout(() => { div.remove(); }, 9500); 
+}
+
+// 发射核心
+async function sendDanmaku() {
+    const input = document.getElementById('danmaku-input');
+    if (!input) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    renderFlyingDanmaku(myNickname, text, true);
+    appendHistory(myNickname, text, true);
+
+    try {
+        const response = await fetch('api_danmaku.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'send', page_type: pageType, content: text })
+        });
+        const json = await response.json();
+        if (json.status !== 'success') alert('❌ ' + json.message);
+    } catch (e) { console.error("发送异常", e); }
+}
+
+// 雷达同步
+async function fetchDanmaku() {
+    try {
+        const response = await fetch('api_danmaku.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get', page_type: pageType, last_id: lastDanmakuId })
+        });
+        const json = await response.json();
+        
+        if (json.status === 'success' && json.data.length > 0) {
+            lastDanmakuId = json.last_id;
+            
+            json.data.forEach((msg) => {
+                danmakuPool.push(msg);
+                appendHistory(msg.name, msg.text);
+                
+                if (msg.name !== myNickname) {
+                    renderFlyingDanmaku(msg.name, msg.text);
+                }
+            });
+        }
+    } catch (e) {}
+}
+
+// 永动循环引擎
+function loopHistoricalDanmaku() {
+    if (danmakuPool.length > 0 && Math.random() > 0.4) {
+        const msg = danmakuPool[poolIndex];
+        renderFlyingDanmaku(msg.name, msg.text);
+        poolIndex = (poolIndex + 1) % danmakuPool.length;
+    }
+    setTimeout(loopHistoricalDanmaku, Math.random() * 1500 + 1500);
+}
+
+// 启动系统
+setInterval(fetchDanmaku, 3000);
+fetchDanmaku();
+loopHistoricalDanmaku();
+</script>
+    
+    
 </body>
 </html>

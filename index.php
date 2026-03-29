@@ -618,9 +618,9 @@ if (file_exists('user_config.php')) {
                 statusClass: "status-ended",
                 img: "/assets/backup/sora01.png", 
                 imgStyle: "filter: brightness(0.5);",
-                title: "十二菜器：年度作品评选",
+                title: "十二菜器作品评选",
                 desc: "基于全新 YmGal API 构建。从浩瀚的档案库中，选出你心目中的十二部神作。（当前区块正在进行视觉重构，访问路径暂已冻结）",
-                link: "javascript:alert('【系统拦截】\\n十二菜器企划正在进行架构升级与页面重构。\\n访问权限暂暂时封锁');"
+                link: "/events/caiqi_vote/index.php"
             },
             {
                 status: "ARCHIVE 已结束",
