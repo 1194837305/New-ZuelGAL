@@ -146,12 +146,136 @@
             .game-title { font-size: 13px; }
             .slot-controls { transform: translateY(0); height: 24px; } /* 手机端始终显示按钮 */
         }
+        
+        /* === 右上角规则按钮样式 === */
+.cyber-rule-btn {
+    position: fixed;
+    top: 25px;
+    right: 30px;
+    /* 1. 降低 z-index：确保它在所有弹窗（通常是 1000+）之下 */
+    z-index: 900; 
+    
+    background: rgba(10, 10, 12, 0.85);
+    color: var(--primary, #c9171e);
+    text-decoration: none;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    border: 1px solid var(--primary, #c9171e);
+    border-radius: 4px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 10px rgba(201, 23, 30, 0.2);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+}
+
+/* 扫光特效 */
+.cyber-rule-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(201, 23, 30, 0.4), transparent);
+    transform: skewX(-20deg);
+    animation: cyber-sweep 3s infinite;
+}
+
+.cyber-rule-btn:hover {
+    background: rgba(201, 23, 30, 0.15);
+    box-shadow: 0 0 20px rgba(201, 23, 30, 0.6), inset 0 0 10px rgba(201, 23, 30, 0.3);
+    transform: translateY(-2px);
+    color: #fff;
+}
+
+.btn-icon {
+    animation: warning-blink 2s infinite;
+}
+
+@keyframes cyber-sweep {
+    0% { left: -100%; }
+    20% { left: 200%; }
+    100% { left: 200%; }
+}
+@keyframes warning-blink {
+    0%, 100% { opacity: 1; text-shadow: 0 0 8px var(--primary, #c9171e); }
+    50% { opacity: 0.4; text-shadow: none; }
+}
+        
+        /* === BGM 开关样式 === */
+#bgm-switch {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px;
+    height: 44px;
+    background: rgba(10, 10, 12, 0.8);
+    border: 1px solid var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(201, 23, 30, 0.2);
+}
+
+#bgm-icon {
+    color: var(--primary);
+    font-size: 20px;
+    font-weight: bold;
+    /* 播放时的旋转动画 */
+    animation: music-spin 3s linear infinite;
+}
+
+/* 暂停状态的样式 */
+#bgm-switch.paused {
+    opacity: 0.5;
+    border-color: #666;
+}
+#bgm-switch.paused #bgm-icon {
+    color: #666;
+    animation-play-state: paused;
+}
+
+@keyframes music-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+#bgm-switch:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(201, 23, 30, 0.5);
+}
+        
+        
     </style>
 </head>
+
+
+    
 <body>
+    
+        <audio id="caiqi-bgm" loop>
+    <source src="../../assets/mfsn_battle.mp3" type="audio/mpeg">
+</audio>
+
+<div id="bgm-switch" onclick="toggleBGM()" title="音乐开关">
+    <div id="bgm-icon">♪</div>
+</div>
+    
+
+    <a href="rules.php" target="_blank" class="cyber-rule-btn">
+    <span class="btn-icon">⚠</span> 赛事最高机密
+</a>
 
     <div class="header">
-        <a href="../../index.html" class="back-btn">← 撤退</a>
+        <a href="/events/caiqi_vote/index.php" class="back-btn">← 撤退</a>
         <h1 class="title">盲盒提案生成台</h1>
         <div class="subtitle">组装你的心动阵容，将至多一半作品藏于深渊</div>
     </div>
@@ -193,6 +317,38 @@
     </div>
 
 <script>
+
+    const bgm = document.getElementById('caiqi-bgm');
+const bgmBtn = document.getElementById('bgm-switch');
+
+// 1. 手动切换逻辑
+function toggleBGM() {
+    if (bgm.paused) {
+        bgm.play();
+        bgmBtn.classList.remove('paused');
+    } else {
+        bgm.pause();
+        bgmBtn.classList.add('paused');
+    }
+}
+
+// 2. 破解浏览器“自动播放”限制
+// 只要用户在页面任何地方点一下，音乐就会立刻开启（符合“默认开启”的意图）
+document.addEventListener('click', function() {
+    if (bgm.paused && !bgmBtn.classList.contains('paused')) {
+        bgm.play().catch(e => console.log("等待交互以播放音频"));
+    }
+}, { once: true }); // 只触发一次，之后就不管了
+
+// 3. 尝试直接播放（部分环境下如果已有交互记录则会成功）
+window.addEventListener('load', () => {
+    bgm.volume = 0.5; // 建议初始音量 50%，不要吓到群友
+    bgm.play().catch(() => {
+        console.log("浏览器拦截了自动播放，等待用户点击...");
+    });
+});
+
+
     // === 核心数据状态 ===
     let myProposal = []; // 存放选中的游戏对象 {id, title, cover, isPublic: false}
     const MAX_GAMES = 12;

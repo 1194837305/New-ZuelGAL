@@ -1,8 +1,8 @@
 <?php
-// === tierlist.php 完整视觉增强版 ===
+// === tierlist.php 完整视觉增强与修复版 ===
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-date_default_timezone_set('PRC'); // 强制中国时区
+date_default_timezone_set('PRC'); 
 
 $config_path = '../../config.php';
 if (!file_exists($config_path)) {
@@ -11,12 +11,11 @@ if (!file_exists($config_path)) {
 require_once $config_path;
 
 $games = [];
-$is_shrunk = (time() > strtotime("2026-04-27 00:00:00")); // 判断是否已过缩圈时间
+$is_shrunk = (time() > strtotime("2026-04-27 00:00:00")); 
 
 try {
     $conn = db_connect();
     
-    // 💡 修复1：自动创建总作品表 (如果不存在)
     $conn->query("CREATE TABLE IF NOT EXISTS event_caiqi_works (
         ymgal_id INT PRIMARY KEY,
         title_cn VARCHAR(255) NOT NULL,
@@ -24,7 +23,6 @@ try {
         nomination_count INT DEFAULT 1
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-    // 💡 修复2：自动创建淘汰赛投票记录表 (如果不存在)
     $conn->query("CREATE TABLE IF NOT EXISTS event_caiqi_tier_votes (
         id INT AUTO_INCREMENT PRIMARY KEY,
         ymgal_id INT NOT NULL,
@@ -35,7 +33,6 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     
-    // 安全自检：确保作品表里有淘汰赛专用的字段
     $check_tier_votes = $conn->query("SHOW COLUMNS FROM event_caiqi_works LIKE 'tier_votes'");
     if ($check_tier_votes && $check_tier_votes->num_rows == 0) {
         $conn->query("ALTER TABLE event_caiqi_works ADD COLUMN tier_votes INT DEFAULT 0");
@@ -45,10 +42,7 @@ try {
         $conn->query("ALTER TABLE event_caiqi_works ADD COLUMN last_voted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
     }
 
-// 💡 核心重构：配额顺延制晋级逻辑 (12-8-4-4...)
     $top24_ids = [];
-
-    // 1. 预先拉取所有作品的提名数，方便在配额内进行“优胜劣汰”
     $nom_map = [];
     $works_res = $conn->query("SELECT ymgal_id, nomination_count FROM event_caiqi_works");
     if ($works_res && $works_res->num_rows > 0) {
@@ -57,27 +51,23 @@ try {
         }
     }
 
-    // 2. 按得票数从高到低，获取所有提案
     $prop_sql = "SELECT games_data FROM event_caiqi_proposals ORDER BY votes DESC, created_at ASC";
     $prop_res = $conn->query($prop_sql);
 
-    $rollover_quota = 0; // 顺延名额结转池
-    $rank_index = 0;     // 提案名次索引 (0是第一名，1是第二名...)
+    $rollover_quota = 0; 
+    $rank_index = 0;     
 
     if ($prop_res && $prop_res->num_rows > 0) {
         while ($row = $prop_res->fetch_assoc()) {
-            // 确定当前提案的基础配额
             if ($rank_index == 0) { $base_quota = 12; }
             elseif ($rank_index == 1) { $base_quota = 8; }
             else { $base_quota = 4; }
 
-            $current_quota = $base_quota + $rollover_quota; // 实际可用配额 = 基础 + 结转过来的
-
+            $current_quota = $base_quota + $rollover_quota; 
             $games_array = json_decode($row['games_data'], true);
             $unique_candidates = [];
 
             if (is_array($games_array)) {
-                // 筛选出这个提案里，还没有被前面大佬挑走的作品
                 foreach ($games_array as $g) {
                     $g_id = (int)$g['id'];
                     if (!in_array($g_id, $top24_ids)) {
@@ -86,28 +76,20 @@ try {
                 }
             }
 
-            // 👑 核心：对这些候选作品，按照【总被提名数】从高到低进行内部排序！
             usort($unique_candidates, function($a, $b) use ($nom_map) {
                 $count_a = $nom_map[$a] ?? 0;
                 $count_b = $nom_map[$b] ?? 0;
-                return $count_b <=> $count_a; // 降序：提名数多的排在前面
+                return $count_b <=> $count_a; 
             });
 
-            // 从排序好的名单中，精准截取当前配额数量的作品
             $selected_games = array_slice($unique_candidates, 0, $current_quota);
-
-            // 将截取到的精锐作品编入最终的 24 强大名单
             $top24_ids = array_merge($top24_ids, $selected_games);
-
-            // 计算该提案没有用完的空余配额，结转给下一名
             $added_count = count($selected_games);
             $rollover_quota = $current_quota - $added_count;
-
             $rank_index++;
 
-            // 如果已经集齐 24 强，立刻停止开箱
             if (count($top24_ids) >= 24) {
-                $top24_ids = array_slice($top24_ids, 0, 24); // 防止超载，强制锁死在 24 个
+                $top24_ids = array_slice($top24_ids, 0, 24); 
                 break;
             }
         }
@@ -117,34 +99,26 @@ try {
         die("当前没有任何合法的提案数据，无法生成淘汰赛榜单！");
     }
     
-    // 3. 拿着这 24 个天选之子的 ID，去作品库里把它们的战力数据查出来
     $id_list = implode(',', $top24_ids);
     $sql = "SELECT * FROM event_caiqi_works WHERE ymgal_id IN ($id_list) ORDER BY tier_votes DESC, last_voted_at DESC, nomination_count DESC";
     $result = $conn->query($sql);
     if ($result && $result->num_rows > 0) {
         while($row = $result->fetch_assoc()) {
-            $games[] = $row; // 这行最关键，把查到的数据塞进 $games 数组
+            $games[] = $row; 
         }
     }
-    // 同步今日余弹 (💡 修复3：加上判断，防止查不到数据时 fetch_row()[0] 报错)
+    
     $today = date('Y-m-d');
     $ip = $_SERVER['REMOTE_ADDR'];
     
-    $love_res = $conn->query("SELECT COUNT(*) FROM event_caiqi_tier_votes WHERE vote_type = 'love' AND vote_date = '$today' AND ip_address = '$ip'");
-    $used_love = $love_res ? $love_res->fetch_row()[0] : 0;
     
-    $normal_res = $conn->query("SELECT COUNT(*) FROM event_caiqi_tier_votes WHERE vote_type = 'normal' AND vote_date = '$today' AND ip_address = '$ip'");
-    $used_normal = $normal_res ? $normal_res->fetch_row()[0] : 0;
-    
-    $init_love = max(0, 1 - $used_love);
-    $init_normal = max(0, 5 - $used_normal);
+
 
     $conn->close();
 } catch (Exception $e) {
     die("数据库通讯崩溃：" . $e->getMessage());
 }
 
-// 分配算法 (1-2-3-6-12)
 $hang = []; $top = []; $elite = []; $npc = []; $trash = [];
 $promoted_count = 0;
 foreach ($games as $g) {
@@ -160,33 +134,31 @@ foreach ($games as $g) {
 }
 $tiers = [ 'hang' => $hang, 'top' => $top, 'elite' => $elite, 'npc' => $npc, 'trash' => $trash ];
 
-// 渲染函数：增加缩圈视觉逻辑
 function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk_global = false) {
     $html = '';
     $count = count($tier_array);
     for ($i = 0; $i < $count; $i++) {
         $g = $tier_array[$i];
-        
-        // 核心修改：分别提取两个数据
         $nom_count = $g['nomination_count'];
         $tier_v = $g['tier_votes'];
         
-        // 拼接双重数据显示：[提名数] | [当前战力]
-        // 这里给提名数加了一点灰度，让它看起来像背景数据，而红色的战力更醒目
         $votes_html = '<span style="color:#888; font-size:10px;">'.$nom_count.'提 | </span>' . $tier_v . '战';
         
-        $safe_title = htmlspecialchars($g['title_cn'], ENT_QUOTES);
+        // 💡 修复核心：安全转义标题，彻底避免特殊字符搞崩 JS
+        $encoded_title = htmlspecialchars($g['title_cn'], ENT_QUOTES, 'UTF-8');
+        
+        // 💡 修复核心：使用 dataset 提取标题，而不是在 onclick 里硬拼字符串
         $onclick = ($is_shrunk_global && $is_trash_tier) 
                    ? "alert('🚨 缩圈警报：该作品已被锁死在深渊，无法再进行投票！')" 
-                   : "openVoteModal(".$g['ymgal_id'].", '".$safe_title."')";
+                   : "openVoteModal(".$g['ymgal_id'].", this.dataset.title)";
 
         $html .= '
-        <div class="game-card" onclick="'.$onclick.'">
+        <div class="game-card" data-title="'.$encoded_title.'" onclick="'.$onclick.'">
             <div class="game-cover">
                 <img src="'.htmlspecialchars($g['cover_url']).'" alt="">
                 <div class="game-votes">'.$votes_html.'</div>
             </div>
-            <div class="game-title">'.$safe_title.'</div>
+            <div class="game-title">'.$encoded_title.'</div>
         </div>';
     }
     for ($i = $count; $i < $max_slots; $i++) {
@@ -210,7 +182,6 @@ function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk
         .back-btn:hover { border-color: var(--primary); color: #fff; }
         .title { font-size: 40px; color: #fff; margin: 0; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 15px var(--primary); }
         
-        /* 倒计时样式 */
         .countdown { display: inline-block; margin-top: 15px; padding: 10px 20px; background: rgba(0,0,0,0.8); border: 1px solid var(--primary); color: var(--primary); font-family: monospace; font-size: 18px; font-weight: bold; border-radius: 4px; }
 
         .ammo-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(20,20,25,0.95); border-top: 1px solid #333; display: flex; justify-content: center; gap: 30px; padding: 15px 0; z-index: 100; backdrop-filter: blur(10px); }
@@ -238,18 +209,36 @@ function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk
 
         .tier-row.is-trash .tier-games { background: repeating-linear-gradient(45deg, #111, #111 10px, #000 10px, #000 20px); }
         .tier-row.is-trash .game-card:not(.empty-card) { filter: grayscale(100%) brightness(0.4); }
-        .tier-row.is-trash .game-card:not(.empty-card)::after { content: '🔒 危'; position: absolute; top: 50%; left: 50%; font-weight: bold; color: #ff4d4f; border: 2px solid #ff4d4f; padding: 2px 5px; transform: translate(-50%, -50%) rotate(-15deg); background: rgba(0,0,0,0.8); }
+        .tier-row.is-trash .game-card:not(.empty-card)::after { 
+            content: '🔒 危'; 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            font-weight: bold; 
+            color: #ff4d4f; 
+            border: 2px solid #ff4d4f; 
+            padding: 2px 5px; 
+            transform: translate(-50%, -50%) rotate(-15deg); 
+            background: rgba(0,0,0,0.8); 
+            pointer-events: none; /* 💡 修复核心：穿透伪元素点击 */
+        }
 
         @media (max-width: 768px) { .tier-row { flex-direction: column; } .tier-label { width: 100%; height: 40px; font-size: 18px; } .game-card { width: calc(33.33% - 7px); } }
     </style>
 </head>
 <body>
 
+    <?php 
+    // 无论你在哪个子文件夹，这行代码都能精准定位到根目录的 player.php
+    include_once $_SERVER['DOCUMENT_ROOT'] . "/player.php"; 
+?>
+
     <div class="battle-header">
         <a href="index.php?archive=1" class="back-btn">← 阅览海选历史盲盒</a>
-        <h1 class="title">十二菜器 · 实时战况榜</h1>
+        <h1 class="title">十二菜器</h1>
+        <h4 class="title">第二阶段：淘汰赛</h4>
         <div class="countdown">
-            <span id="stage-label">距离缩圈定榜：</span>
+            <span id="stage-label">距离缩圈斩杀：</span>
             <span id="tier-timer">--:--:--</span>
         </div>
     </div>
@@ -264,13 +253,13 @@ function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk
 
     <div class="ammo-bar">
         <div class="ammo-item">
-            <div style="font-size: 12px; color: #888;">今日真爱票 (2分)</div>
-            <div class="ammo-num ammo-love" id="ammo-love-ui"><?= $init_love ?> / 1</div>
-        </div>
-        <div class="ammo-item">
-            <div style="font-size: 12px; color: #888;">今日普通票 (1分)</div>
-            <div class="ammo-num ammo-normal" id="ammo-normal-ui"><?= $init_normal ?> / 5</div>
-        </div>
+         <div style="font-size: 12px; color: #888;">今日真爱票 (2分)</div>
+         <div class="ammo-num ammo-love" id="ammo-love-ui">- / 1</div>
+     </div>
+     <div class="ammo-item">
+         <div style="font-size: 12px; color: #888;">今日普通票 (1分)</div>
+         <div class="ammo-num ammo-normal" id="ammo-normal-ui">- / 5</div>
+     </div>
     </div>
 
     <div class="modal-overlay" id="fire-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center;">
@@ -284,7 +273,6 @@ function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk
     </div>
 
     <script>
-        // 倒计时逻辑
         const timeNodes = {
             shrink: new Date("2026-04-27 00:00:00").getTime(),
             final: new Date("2026-04-28 00:00:00").getTime()
@@ -307,7 +295,6 @@ function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk
         }
         setInterval(updateTierTimer, 1000); updateTierTimer();
 
-        // 投票函数逻辑保持你之前的 executeFire ...
         let currentTargetId = null;
         function openVoteModal(id, title) {
             currentTargetId = id;
@@ -337,6 +324,60 @@ function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk
                 } else { alert('❌ ' + json.message); }
             } catch (error) { alert('连接失败'); }
         }
+        
+        // 🟢 弹药库动态同步引擎
+     async function syncAmmo() {
+         let voter = localStorage.getItem('caiqi_voter_name') || '';
+         try {
+             const response = await fetch('api_vote_tierlist.php', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ action: 'get_ammo', voter_name: voter })
+             });
+             const json = await response.json();
+             if (json.status === 'success') {
+                 document.getElementById('ammo-love-ui').innerText = json.remain_love + ' / 1';
+                 document.getElementById('ammo-normal-ui').innerText = json.remain_normal + ' / 5';
+             }
+         } catch (error) {
+             console.error("弹药库同步中断", error);
+         }
+     }
+
+     // 页面一加载，立刻同步最真实的弹药量
+     document.addEventListener('DOMContentLoaded', syncAmmo);
+
+     // 优化投票执行逻辑：无刷新更新体验
+     async function executeFire(voteType) {
+         if (!currentTargetId) return;
+         let voter = localStorage.getItem('caiqi_voter_name');
+         if (!voter) {
+             voter = prompt("请输入社团代号：");
+             if (!voter) return;
+             localStorage.setItem('caiqi_voter_name', voter);
+             syncAmmo(); // 刚填完名字，立刻去查一下这个名字有没有票
+         }
+         document.getElementById('fire-modal').style.display = 'none';
+         try {
+             const response = await fetch('api_vote_tierlist.php', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ ymgal_id: currentTargetId, voter_name: voter, vote_type: voteType })
+             });
+             const json = await response.json();
+             if (json.status === 'success') {
+                 alert('🔥 ' + json.message);
+                 // 💡 不再使用 location.reload() 刷新网页！
+                 // 而是静默重新拉取票数，并稍等后局部更新UI，体验丝滑！
+                 syncAmmo(); 
+                 setTimeout(() => { location.reload(); }, 1500); // 延迟刷新，让用户先看清票数扣除
+             } else { 
+                 alert('❌ ' + json.message); 
+                 syncAmmo(); // 哪怕拦截了，也刷新一下真实的剩余票数给用户看
+             }
+         } catch (error) { alert('服务器连接异常，请重试'); }
+     }
+        
     </script>
 </body>
 </html>

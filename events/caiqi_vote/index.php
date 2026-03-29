@@ -79,7 +79,7 @@ try {
     <style>
         /* 这里保留之前写好的所有炫酷 CSS 样式 */
         :root { --primary: #c9171e; --bg-dark: #0a0a0c; --panel-bg: #141418; --gold: #FFD700; }
-        body { margin: 0; padding: 0; background-color: var(--bg-dark); color: #eee; font-family: 'Noto Serif SC', serif; background-image: radial-gradient(circle at 50% 0%, #2a080c 0%, #0a0a0c 60%); background-attachment: fixed; }
+        body { margin: 0; padding: 0; background-color: transparent; color: #eee; font-family: 'Noto Serif SC', serif; }
         .hero { text-align: center; padding: 60px 20px 40px; position: relative; border-bottom: 1px dashed #333; margin-bottom: 40px;}
         .back-btn { position: absolute; left: 20px; top: 20px; color: #aaa; text-decoration: none; font-size: 14px; border: 1px solid #444; padding: 5px 15px; border-radius: 4px; transition: 0.3s; }
         .back-btn:hover { color: #fff; border-color: var(--primary); }
@@ -123,17 +123,309 @@ try {
         .vote-btn { padding: 15px 50px; font-size: 18px; font-weight: bold; background: var(--primary); color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: 0.3s; width: 100%; max-width: 400px; }
         .vote-btn:hover { background: #ff4d4f; box-shadow: 0 0 20px rgba(201,23,30,0.6); }
         @media (max-width: 768px) { .title { font-size: 32px; } .create-btn { padding: 15px 30px; font-size: 16px; width: 80%; box-sizing: border-box;} .p-preview { grid-template-columns: repeat(3, 1fr); } }
+        
+        .back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: #888;
+    text-decoration: none;
+    font-size: 13px;
+    border: 1px solid #333;
+    padding: 4px 12px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    z-index: 100;
+    letter-spacing: 1px;
+}
+
+.back-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: rgba(201, 23, 30, 0.05);
+    transform: translateX(-5px); /* 悬停时往左微移，更有“撤退”的动感 */
+}
+        
+        /* === 倒计时模块精致化样式 === */
+.countdown-wrapper {
+    margin-top: 12px; /* 缩减间隙，保持视觉紧凑 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 状态小标签 */
+.status-badge {
+    background: rgba(201, 23, 30, 0.1);
+    border: 1px solid rgba(201, 23, 30, 0.3);
+    color: var(--primary);
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* 呼吸灯动画：模拟“暗流涌动” */
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--primary);
+    border-radius: 50%;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0% { opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { opacity: 0.3; }
+}
+
+#countdown-box {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 15px;
+    border-radius: 4px;
+    border-left: 3px solid var(--primary); /* 增加侧边装饰线 */
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.timer-label {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    color: #666;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+#caiqi-timer {
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--primary);
+    font-weight: 900;
+    font-size: 22px;
+    text-shadow: 0 0 10px rgba(201, 23, 30, 0.4);
+    font-variant-numeric: tabular-nums; /* 防止数字跳动 */
+}
+        
+        /* === BGM 开关样式 === */
+#bgm-switch {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px;
+    height: 44px;
+    background: rgba(10, 10, 12, 0.8);
+    border: 1px solid var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(201, 23, 30, 0.2);
+}
+
+#bgm-icon {
+    color: var(--primary);
+    font-size: 20px;
+    font-weight: bold;
+    /* 播放时的旋转动画 */
+    animation: music-spin 3s linear infinite;
+}
+
+/* 暂停状态的样式 */
+#bgm-switch.paused {
+    opacity: 0.5;
+    border-color: #666;
+}
+#bgm-switch.paused #bgm-icon {
+    color: #666;
+    animation-play-state: paused;
+}
+
+@keyframes music-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+#bgm-switch:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(201, 23, 30, 0.5);
+}
+    
+    /* === 右上角规则按钮样式 === */
+.cyber-rule-btn {
+    position: fixed;
+    top: 25px;
+    right: 30px;
+    /* 1. 降低 z-index：确保它在所有弹窗（通常是 1000+）之下 */
+    z-index: 900; 
+    
+    background: rgba(10, 10, 12, 0.85);
+    color: var(--primary, #c9171e);
+    text-decoration: none;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    border: 1px solid var(--primary, #c9171e);
+    border-radius: 4px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 10px rgba(201, 23, 30, 0.2);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+}
+
+/* 扫光特效 */
+.cyber-rule-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(201, 23, 30, 0.4), transparent);
+    transform: skewX(-20deg);
+    animation: cyber-sweep 3s infinite;
+}
+
+.cyber-rule-btn:hover {
+    background: rgba(201, 23, 30, 0.15);
+    box-shadow: 0 0 20px rgba(201, 23, 30, 0.6), inset 0 0 10px rgba(201, 23, 30, 0.3);
+    transform: translateY(-2px);
+    color: #fff;
+}
+
+.btn-icon {
+    animation: warning-blink 2s infinite;
+}
+
+@keyframes cyber-sweep {
+    0% { left: -100%; }
+    20% { left: 200%; }
+    100% { left: 200%; }
+}
+@keyframes warning-blink {
+    0%, 100% { opacity: 1; text-shadow: 0 0 8px var(--primary, #c9171e); }
+    50% { opacity: 0.4; text-shadow: none; }
+}
+    
+/* === 审判大厅背景架构 === */
+.trial-hall-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2; /* 确保在所有内容之下 */
+    overflow: hidden;
+    background: #050507; /* 极深色兜底 */
+}
+
+.bg-image {
+    position: absolute;
+    top: -5%;
+    left: -5%;
+    width: 110%;
+    height: 110%;
+    background: url('/assets/caiqi_bg.webp') center/cover no-repeat;
+    
+    /* 艺术调优：6px 模糊能保留建筑轮廓，saturate 0.5 增加肃穆感 */
+    filter: blur(6px) saturate(0.5) brightness(0.5) contrast(1.1); 
+    
+    animation: bg-pulse 25s infinite alternate ease-in-out;
+}
+
+/* 径向遮罩：中间亮、四周暗，像聚光灯打在提案卡片上 */
+.bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        circle at center, 
+        transparent 10%, 
+        rgba(5, 5, 7, 0.4) 40%, 
+        rgba(5, 5, 7, 0.85) 80%, 
+        #050507 100%
+    );
+}
+
+/* 强化暗角：增加压迫感 */
+.bg-vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+}
+
+@keyframes bg-pulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.08); }
+}
+
+/* 移动端性能优化：减少模糊度以防卡顿 */
+@media (max-width: 768px) {
+    .bg-image {
+        filter: blur(5px) saturate(0.5) brightness(0.5);
+        animation: none;
+    }
+}
+    
     </style>
 </head>
-<body>
 
-    <div class="hero">
-        <a href="../../index.html" class="back-btn">← 撤退</a>
-        <h1 class="title">十二菜器 · 盲盒海选</h1>
-        <div class="subtitle">第一阶段：暗流涌动的提案之战</div>
-        <div id="countdown-box" style="margin-top: 20px; font-family: monospace; color: #888; font-size: 14px;">
-            距离提案封存还有：<span id="caiqi-timer" style="color: var(--primary); font-weight: bold; font-size: 18px;">--:--:--</span>
-        </div>
+
+
+<body>
+    
+        <audio id="caiqi-bgm" loop>
+    <source src="../../assets/mfsn_battle.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="bgm-switch" onclick="toggleBGM()" title="音乐开关">
+    <div id="bgm-icon">♪</div>
+    </div>
+    
+    <div class="trial-hall-bg">
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+    <div class="bg-vignette"></div>
+</div>
+    
+
+<a href="rules.php" target="_blank" class="cyber-rule-btn">
+    <span class="btn-icon">⚠</span> 赛事最高机密
+</a>
+
+<div class="hero">
+    <a href="../../index.php" class="back-btn">← 撤退</a>
+
+    <h1 class="title">十二菜器 · 海选赛</h1>
+    <div class="subtitle">第一阶段：盲盒提案</div>
+
+    <div class="countdown-wrapper">
+    <div class="status-badge">
+        <span class="status-dot"></span>
+        第一阶段进行中
+    </div>
+    <div id="countdown-box">
+        <span class="timer-label">PROPOSAL EXPIRATION :</span>
+        <span id="caiqi-timer">--:--:--</span>
+    </div>
+</div>
         
         <script>
     // 🚩 在这里设置你的海选截止时间
@@ -155,6 +447,39 @@ try {
     setInterval(updateTimer, 1000);
     updateTimer();
 </script>
+        
+        <script>
+const bgm = document.getElementById('caiqi-bgm');
+const bgmBtn = document.getElementById('bgm-switch');
+
+// 1. 手动切换逻辑
+function toggleBGM() {
+    if (bgm.paused) {
+        bgm.play();
+        bgmBtn.classList.remove('paused');
+    } else {
+        bgm.pause();
+        bgmBtn.classList.add('paused');
+    }
+}
+
+// 2. 破解浏览器“自动播放”限制
+// 只要用户在页面任何地方点一下，音乐就会立刻开启（符合“默认开启”的意图）
+document.addEventListener('click', function() {
+    if (bgm.paused && !bgmBtn.classList.contains('paused')) {
+        bgm.play().catch(e => console.log("等待交互以播放音频"));
+    }
+}, { once: true }); // 只触发一次，之后就不管了
+
+// 3. 尝试直接播放（部分环境下如果已有交互记录则会成功）
+window.addEventListener('load', () => {
+    bgm.volume = 0.5; // 建议初始音量 50%，不要吓到群友
+    bgm.play().catch(() => {
+        console.log("浏览器拦截了自动播放，等待用户点击...");
+    });
+});
+</script>
+        
         
         <a href="propose.php" class="create-btn">➕ 拟定我的盲盒提案</a>
     </div>

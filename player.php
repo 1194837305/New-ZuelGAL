@@ -23,13 +23,15 @@
         width: 66px !important;
         border: none !important;
         background: transparent !important;
+
     }
 
     .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body {
-        border: 2px solid rgba(201, 23, 30, 0.8) !important; 
-        border-radius: 50% !important;
+        border: 1px solid rgba(201, 23, 30, 0.8) !important; 
+        border-radius: 10% !important;
         background: #0a0a0c !important;
         box-shadow: 0 0 15px rgba(201, 23, 30, 0.4) !important;
+        overflow: hidden !important;
     }
 
     .aplayer * { color: #e0e0e0 !important; }

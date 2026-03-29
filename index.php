@@ -57,7 +57,7 @@ if (file_exists('user_config.php')) {
         #global-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-image: url('assets/bg1.jpg'); 
-            background-size: cover; background-position: center;
+            background-size: cover; background-position: right;
             z-index: -2;
             animation: slowBreath 30s infinite alternate;
         }
@@ -188,7 +188,7 @@ if (file_exists('user_config.php')) {
         .view-container.fade { opacity: 0; }
 
         .hero-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none; }
-        .hero-webp { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none; }
+        .hero-webp { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none; object-position: right center;}
         .mobile-only { display: none; }
         .pc-only { display: block; }
         .hero-video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 1; pointer-events: none; }
@@ -276,7 +276,7 @@ if (file_exists('user_config.php')) {
             .pc-only { display: none !important; }
             .mobile-only { display: block !important; }
             #global-bg { animation: none !important; }
-            .hero-webp { transform: translateZ(0); will-change: transform; backface-visibility: hidden; }
+            .hero-webp { transform: translateZ(0); will-change: transform; backface-visibility: hidden; background-position: right center;}
             #bg-overlay { background: rgba(10, 10, 12, 0.8) !important; }
             
             #sidebar { width: 100%; height: 60px; flex-direction: row; align-items: center; justify-content: space-between; border-right: none; border-bottom: 1px solid var(--border-color); padding: 0 15px; box-sizing: border-box; }
@@ -391,7 +391,7 @@ if (file_exists('user_config.php')) {
     <nav id="sidebar">
         <div class="logo-area">
             <h1>Zuel<span>Gal</span>.</h1>
-            <div class="mobile-user-icon" onclick="<?php echo isset($_SESSION['user_id']) ? "alert('欢迎回来，{$_SESSION['nickname']}！')" : "openAuthModal('login')"; ?>">
+            <div class="mobile-user-icon" onclick="<?php echo isset($_SESSION['user_id']) ? "window.location.href='profile.php'" : "openAuthModal('login')"; ?>">
                 <svg viewBox="0 0 24 24" width="22" height="22" style="<?php echo isset($_SESSION['user_id']) ? 'color: var(--primary);' : ''; ?>" stroke="currentColor" stroke-width="2" fill="none">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
@@ -412,7 +412,7 @@ if (file_exists('user_config.php')) {
         <div class="sidebar-footer">
             <?php if(isset($_SESSION['user_id'])): ?>
                 <div class="user-profile-module">
-                    <div class="user-avatar-wrap">
+                    <div class="user-avatar-wrap" onclick="window.location.href='profile.php'" style="cursor: pointer;" title="进入个人中心">
                         <div class="avatar-circle" style="border-color: var(--primary); overflow: hidden;">
                             <?php if(!empty($_SESSION['avatar']) && $_SESSION['avatar'] !== '/assets/default-avatar.png'): ?>
                                 <img src="<?php echo $_SESSION['avatar']; ?>" style="width: 100%; height: 100%; object-fit: cover;">
@@ -772,7 +772,7 @@ if (file_exists('user_config.php')) {
                     <source data-src="/assets/hero-pc.mp4" type="video/mp4">
                 </video>
                 <img class="hero-webp mobile-only" src="/assets/hero-mobile-static.jpg" alt="静态背景" style="z-index: 0;">
-                <img class="hero-webp mobile-only" src="/assets/hero-mobile.webp" alt="动态背景" style="z-index: 1;">
+                <img class="hero-webp mobile-only" src="/assets/hero-mobile.webp" alt="动态背景" style="z-index: 1;" >
                 <div class="hero-video-overlay" style="z-index: 2;"></div> 
                 <h2 class="hero-title" style="z-index: 3; position: relative;">在这虚构的故事中，<br>寻找真实的对象。</h2>
                 <div class="hero-subtitle" style="z-index: 3; position: relative;">ZuelGal / 中南大视觉小说社官方入口</div>
