@@ -1,6 +1,4 @@
 <?php
-// 此页面目前为纯前端的“提案组装台”UI展示。
-// 提交按钮的后端接口将在下一步完善。
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -134,6 +132,7 @@
         /* === 响应式 === */
         @media (max-width: 900px) {
             .workbench { flex-direction: column; padding: 10px; }
+            .search-area { width: 100%; box-sizing: border-box; }
             .proposal-area { width: 100%; box-sizing: border-box; position: relative; top: 0; order: -1; margin-bottom: 20px;}
             .slots-grid { grid-template-columns: repeat(4, 1fr); }
             .search-box { flex-direction: column; }
@@ -142,8 +141,10 @@
         }
         @media (max-width: 500px) {
             .slots-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
-            .result-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .result-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+            .result-card { padding: 8px; min-width: 0; }
             .game-title { font-size: 13px; }
+            .add-btn { font-size: 12px; padding: 6px; }
             .slot-controls { transform: translateY(0); height: 24px; } /* 手机端始终显示按钮 */
         }
         
@@ -277,7 +278,7 @@
     <div class="header">
         <a href="/events/caiqi_vote/index.php" class="back-btn">← 撤退</a>
         <h1 class="title">盲盒提案生成台</h1>
-        <div class="subtitle">组装你的心动阵容，将至多一半作品藏于深渊</div>
+        <div class="subtitle">组装至多12部作品的提案，将不超过一半的作品曝光</div>
     </div>
 
     <div class="workbench">
@@ -306,11 +307,11 @@
                 </div>
             
             <div style="font-size: 12px; color: #888; margin-bottom: 15px; line-height: 1.5;">
-                <b style="color:var(--primary);">规则：</b>最多可收录 12 部作品。根据游戏黑森林法则，<b style="color:#fff;">你最多只能将其中一半(向下取整)设为公开曝光</b>，其余必须以绝密盲盒形式提交！
+                <b style="color:var(--primary);">规则：</b>最多可收录 12 部作品。<b style="color:#fff;">你最多只能将其中一半(向下取整)设为公开曝光</b>，其余必须以绝密盲盒形式提交
             </div>
 
             <div class="submit-zone">
-                <input type="text" id="author-name" class="author-input" placeholder="输入你的社团代号/昵称">
+                <input type="text" id="author-name" class="author-input" placeholder="输入你的CN昵称">
                 <button class="submit-btn" id="submit-btn" onclick="submitProposal()" disabled>封存并提交提案</button>
             </div>
         </div>
@@ -497,6 +498,16 @@ window.addEventListener('load', () => {
     async function submitProposal() {
         const author = document.getElementById('author-name').value.trim();
         if (!author) { alert('请输入你的代号！我们需要知道这是谁的提案。'); return; }
+        
+        const publicCount = myProposal.filter(g => g.isPublic).length;
+        if (publicCount === 0) {
+            // confirm 会弹出一个带有“确定”和“取消”的系统弹窗
+            const isSure = confirm('系统检测到你目前没有曝光任何作品（全为绝密盲盒），是否继续提交？');
+            if (!isSure) {
+                return; // 如果用户点了“取消”，直接退出函数，不提交
+            }
+        }
+        
         
         const payload = {
             author_name: author,

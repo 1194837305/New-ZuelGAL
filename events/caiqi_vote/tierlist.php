@@ -287,7 +287,7 @@ function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk
         function updateTierTimer() {
             const now = new Date().getTime();
             let target, label;
-            if (now < timeNodes.shrink) { target = timeNodes.shrink; label = "距离缩圈定榜："; }
+            if (now < timeNodes.shrink) { target = timeNodes.shrink; label = "距离缩圈斩杀："; }
             else if (now < timeNodes.final) { target = timeNodes.final; label = "🔥 决赛冲刺截止："; document.getElementById('stage-label').style.color = "#ff4d4f"; }
             else { document.getElementById('stage-label').innerText = "🏁 比赛已结束"; document.getElementById('tier-timer').innerText = ""; return; }
 
@@ -330,6 +330,7 @@ function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk
                 } else { alert('❌ ' + json.message); }
             } catch (error) { alert('连接失败'); }
         }
+            
         
         // 🟢 弹药库动态同步引擎
      async function syncAmmo() {
@@ -679,6 +680,133 @@ fetchDanmaku();
 loopHistoricalDanmaku();
 </script>
     
+<div class="trial-hall-bg">
+    <div class="bg-image"></div>
+    <div id="tsparticles"></div> 
+    <div class="bg-overlay"></div>
+    <div class="bg-vignette"></div>
+</div>
+
+<style>
+/* 初始状态是完全透明的 */
+#voter-pulse-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #fff; /* 能量爆发的白光，也可以选 #c9171e 深红 */
+    opacity: 0;
+    z-index: 5; /* 确保在所有背景元素之上 */
+    pointer-events: none;
+    transition: none;
+}
+
+/* 爆闪动画 */
+@keyframes flash-overload {
+    0% { opacity: 0.8; filter: brightness(2); }
+    100% { opacity: 0; filter: brightness(1); }
+}
+
+.trigger-flash {
+    animation: flash-overload 0.8s ease-out forwards;
+}
+/* === 视觉架构 CSS 修正 === */
+.trial-hall-bg {
+    position: fixed; /* 🟢 修正：使用 fixed，确保滚动时背景图和粒子都不截断 */
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: -2;
+    overflow: hidden;
+}
+
+.bg-image {
+    position: absolute;
+    top: -2%; left: -2%; width: 104%; height: 104%; /* 稍微大一点，防止模糊边缘露出 */
+    /* 核心：再次指向提案大厅的背景图 */
+    background: url('/assets/caiqi_bg.webp') center/cover no-repeat;
+    /* 艺术处理：模糊、降饱和度、压暗，让粒子特效更清晰 */
+    filter: blur(5px) saturate(0.3) brightness(0.2); 
+    transition: filter 1s ease;
+}
+
+#tsparticles {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 1; /* 🟢 必须比 .bg-image 高，但比 .bg-overlay 低 */
+    pointer-events: none; /* 穿透点击，让鼠标能点到后面的投票卡片 */
+}
+
+/* 🟢 在这里给 tsParticles 自动生成的 canvas 加上混合模式 */
+#tsparticles canvas {
+    mix-blend-mode: screen; 
+    opacity: 0.8;
+}
+</style>
+<script src="/assets/js/cyber_bg.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/tsparticles-engine@2/tsparticles.engine.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tsparticles-basic@2/tsparticles.basic.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tsparticles-interaction-particles-links@2/tsparticles.interaction.particles.links.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tsparticles-move-base@2/tsparticles.move.base.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tsparticles-shape-polygon@2/tsparticles.shape.polygon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tsparticles-updater-color@2/tsparticles.updater.color.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tsparticles-updater-opacity@2/tsparticles.updater.opacity.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tsparticles-updater-size@2/tsparticles.updater.size.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tsparticles-plugin-browser@2/tsparticles.plugin.browser.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    tsParticles.load("tsparticles", {
+        fpsLimit: 60,
+    particles: {
+        color: { value: ["#c9171e", "#ff4d4f", "#ffd700"] }, // 赤红与金色
+        links: { enable: false }, // 🟢 抛弃网格，纯粒子爆散美学
+        move: { direction: "none", enable: true, outModes: "bounce", random: true, speed: 6, straight: false }, // 粒子速度飞快，带反弹
+        number: { density: { enable: true, area: 800 }, value: 150 }, // 粒子数量激增
+        opacity: { value: { min: 0.1, max: 1 }, animation: { enable: true, speed: 3, minimumValue: 0.1, sync: false } },
+        shape: { type: "circle" }, // 工整圆点，突出爆散感
+        size: { value: { min: 1, max: 3 }, animation: { enable: true, speed: 5, minimumValue: 1, sync: false } }
+    },
+    interactivity: {
+        detectsOn: "window",
+        events: {
+            onHover: { enable: true, mode: "bubble" }, // 🟢 鼠标划过，粒子瞬间“爆燃”变大变亮
+            resize: true
+        },
+        modes: { bubble: { distance: 120, duration: 2, opacity: 1, size: 8, color: "#ffd700" } }
+    },
+    detectRetina: true// 适配高分屏
+    });
+});
+
+/**
+ * 触发系统过载联动特效
+ */
+function triggerSystemOverload() {
+    const overlay = document.getElementById('voter-pulse-overlay');
     
+    // 1. 触发全屏闪烁
+    overlay.classList.remove('trigger-flash');
+    void overlay.offsetWidth; // 强制重绘，确保动画可以重复触发
+    overlay.classList.add('trigger-flash');
+
+    // 2. 联动 tsParticles：进入“过载模式”
+    const container = tsParticles.domItem(0); // 获取当前的粒子容器实例
+    if (container) {
+        // 瞬间提升粒子速度和大小
+        container.options.particles.move.speed = 20; 
+        container.options.particles.size.value = { min: 5, max: 15 };
+        container.refresh(); // 刷新渲染
+
+        // 1秒后平滑降压，恢复正常水平
+        setTimeout(() => {
+            container.options.particles.move.speed = 6; 
+            container.options.particles.size.value = { min: 1, max: 3 };
+            container.refresh();
+        }, 800);
+    }
+}
+
+</script>
+
 </body>
 </html>

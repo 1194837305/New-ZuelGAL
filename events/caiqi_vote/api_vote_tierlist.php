@@ -149,3 +149,4 @@ try {
     // 捕获所有异常并返回标准 JSON
     echo json_encode(['status' => 'error', 'message' => '系统数据库故障，请稍后再试。']);
 }
+
