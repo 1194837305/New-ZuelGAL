@@ -68,21 +68,27 @@ try {
 
     // --- 🟢 发送弹幕 (实名制严格拦截) ---
     if ($action === 'send') {
-        // 1. 登录鉴权：没登录直接踢回
+        
+        // 1. 第一步：先从前端数据里把内容摘出来，并去掉首尾空格
+        $content = trim($data['content'] ?? '');
+        $len = mb_strlen($content, 'utf-8');
+
+        // 2. 第二步：最严格的长度拦截（即使是异常编码也会被拦住）
+        if ($content === '' || $len === false || $len > 12) {
+            // 注意：这里必须返回 error，前端 JS 才能认出来并弹窗报错
+            die(json_encode(['status' => 'error', 'message' => "发射失败：弹幕限12字内 (当前检测长度: {$len})"]));
+        }
+
+        // 3. 第三步：登录鉴权
         if (!isset($_SESSION['user_id'])) {
             die(json_encode(['status' => 'error', 'message' => '未登录：只有系统正式社员才能发送弹幕！']));
         }
 
-        // 2. 身份提取：直接从服务器 Session 拿真实 ID 和 昵称
+        // 4. 第四步：身份提取
         $user_id = intval($_SESSION['user_id']);
         $voter_name = $conn->real_escape_string($_SESSION['nickname'] ?? '未知社员');
-        
-        $content = trim($data['content'] ?? '');
-        if (empty($content) || mb_strlen($content, 'utf-8') > 50) {
-            die(json_encode(['status' => 'error', 'message' => '弹幕内容不合法（限50字内）']));
-        }
 
-        // 3. 冷却机制：针对真实 user_id 进行冷却限制 (5秒)
+        // 5. 第五步：冷却机制 (5秒)
         $cool_down = 5; 
         $check_spam = $conn->query("SELECT id FROM event_caiqi_danmaku 
                                     WHERE user_id = $user_id 
@@ -91,7 +97,7 @@ try {
             die(json_encode(['status' => 'error', 'message' => "武器过热，请等待 {$cool_down} 秒冷却！"]));
         }
 
-        // 4. 入库记录
+        // 6. 第六步：安全入库
         $safe_content = $conn->real_escape_string($content);
         $conn->query("INSERT INTO event_caiqi_danmaku (page_type, user_id, voter_name, content, ip_address) 
                       VALUES ('$page_type', $user_id, '$voter_name', '$safe_content', '$ip')");

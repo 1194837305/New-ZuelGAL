@@ -349,7 +349,7 @@ if (file_exists('user_config.php')) {
             
             <div id="login-panel" class="auth-panel active">
                 <div class="input-group">
-                    <input type="text" placeholder="学号 / 昵称 / Email" required>
+                    <input type="text" placeholder="账号 / 昵称 / Email" required>
                 </div>
                 <div class="input-group">
                     <input type="password" placeholder="密码" required>
@@ -396,21 +396,21 @@ if (file_exists('user_config.php')) {
                     <div class="icon" style="font-size: 24px;">📝</div>
                     <div class="info" style="flex: 1; text-align: left;">
                         <h4 style="margin: 0 0 5px 0; color: #fff; font-size: 16px;">文本/图文专栏</h4>
-                        <small style="color: #888; font-size: 12px;">仿 B 站风格富文本排版，支持点赞评论</small>
+                        <small style="color: #888; font-size: 12px;">富文本排版，支持点赞评论</small>
                     </div>
                 </div>
                 <div class="option-card" onclick="startSubmission('pdf')">
                     <div class="icon" style="font-size: 24px;">📄</div>
                     <div class="info" style="flex: 1; text-align: left;">
                         <h4 style="margin: 0 0 5px 0; color: #fff; font-size: 16px;">PDF 档案解析</h4>
-                        <small style="color: #888; font-size: 12px;">适用于长篇学术研究、排版固定的社团年鉴</small>
+                        <small style="color: #888; font-size: 12px;">适用于长篇多图长文学术研究</small>
                     </div>
                 </div>
                 <div class="option-card" onclick="startSubmission('bilibili')">
                     <div class="icon" style="font-size: 24px;">📺</div>
                     <div class="info" style="flex: 1; text-align: left;">
                         <h4 style="margin: 0 0 5px 0; color: #fff; font-size: 16px;">B 站专栏导入</h4>
-                        <small style="color: #888; font-size: 12px;">直接跳转外部链接，节省站内服务器资源</small>
+                        <small style="color: #888; font-size: 12px;">直接跳转外部链接</small>
                     </div>
                 </div>
             </div>

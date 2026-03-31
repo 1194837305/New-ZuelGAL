@@ -316,48 +316,49 @@
         <div class="rule-section">
             <div class="section-header">
                 <div class="phase-badge"><span>PHASE 1</span></div>
-                <h2 class="section-title">盲盒提案行动</h2>
+                <h2 class="section-title">盲盒提案海选</h2>
             </div>
             <ul class="rule-list">
-                <li>社员可在提案大厅提交自己心仪的 Galgame 作品列表。</li>
-                <li>每份提案最多包含 <span class="highlight">12 部作品</span>，支持通过 Ymgal 链接一键解析。</li>
-                <li>此阶段充满暗流，提案将在后台自动根据得票热度进行排序，为第二阶段的配额争夺埋下伏笔。</li>
+                <li>社员可在提案大厅提交自己心仪的 Galgame 作品列表，并为其它提案投票（仅1票机会）</li>
+                <li>每份提案最多包含 <span class="highlight">12 部作品</span>,可以将不超过一半的作品设置为公开可见</li>
+                <li>提案将在后台自动根据得票热度进行排序，根据提案的得票分配晋级下一轮的24部作品名额。</li>
             </ul>
-            <div class="media-placeholder" style="background-image: url('assets/placeholder1.jpg'); background-size: cover; background-position: center;">
-                [待接入: 提案阶段视觉解说图]
+            <div class="media-placeholder" style="background-image: url('/assets/caiqirule1.gif'); background-size: cover; background-position: center;">
+                
             </div>
         </div>
 
         <div class="rule-section">
             <div class="section-header">
                 <div class="phase-badge"><span>PHASE 2</span></div>
-                <h2 class="section-title">大逃杀与火力注入</h2>
+                <h2 class="section-title">缩圈大逃杀</h2>
             </div>
             <ul class="rule-list">
-                <li>生成 24 强名单后，正式开启“十二菜器”实时榜单战况。</li>
-                <li>**每日军火配额**：每人每日拥有 <span class="highlight-red">1发 真爱票（+2战力）</span> 与 <span class="highlight">5发 普通票（+1战力）</span>。</li>
-                <li>**战术限制**：每日对同一部作品只能进行一次火力注入，必须将火力分散至不同战线。</li>
-                <li>**绝对防御系统**：系统采用 <span class="highlight-red">IP地址 与 社团代号 双轨锁定</span>，任何刷票行为将被自动偏转。</li>
+                <li>生成 24 强名单后，正式开启“十二菜器”第二赛段实时榜单战况。</li>
+                <li>每日票数配额：每人每日拥有 <span class="highlight-red">1发 真爱票（+2战力）</span> 与 <span class="highlight">5发 普通票（+1战力）</span>。</li>
+                <li>投票限制：每日对同一部作品只能进行一次票数注入，必须将投票分散至不同作品。</li>
+                <li>投票用户判定：系统采用 <span class="highlight-red">IP地址 与 社团代号 双轨锁定</span>。</li>
             </ul>
-            <div class="media-placeholder" style="background-image: url(''); background-size: cover; background-position: center;">
-                [待接入: 投票弹药包机制动态演示]
+            <div class="media-placeholder" style="background-image: url('/assets/caiqirule2.gif'); background-size: cover; background-position: center;">
+                
             </div>
         </div>
 
         <div class="rule-section">
             <div class="section-header">
                 <div class="phase-badge"><span>SYSTEM</span></div>
-                <h2 class="section-title">顺延制与缩圈法则</h2>
+                <h2 class="section-title">顺延晋级与缩圈规则</h2>
             </div>
             <ul class="rule-list">
-                <li>**12-8-4-4 顺延法则**：高票提案享有优先入围权，若入围作品已在名单中，名额将顺延至该提案的下一部作品，确保百花齐放。</li>
-                <li>**缩圈深渊机制**：当时间轴推进至决战前 24 小时，处于榜单 <span class="highlight-red">“拉”行列（第13-24名）的作品将被永久锁死在深渊</span>，无法再接收任何火力。</li>
-                <li>同分判定法则：战力分数相同时，<span class="highlight">最后一次获得火力注入的时间越晚</span>（热度越高）的作品，排名越靠前。</li>
+                <li>12-8-4-4... 顺延机制：高票提案享有12部作品的入围权，排名第二的提案有8部作品晋级，后续提案组合均为4部。若入围作品已在名单中，名额将顺延至该提案的总提名数更高作品直至晋级池到达24部。</li>
+                <li>缩圈深渊机制：第二赛段当时间轴推进至决战前最后 24 小时，处于榜单 <span class="highlight-red">“拉”行列（第13-24名）的作品将被永久锁死在深渊</span>，无法再接收任何投票。</li>
+                <li>可以通过全频段广播进行弹幕留言。</li>
+                <li>同分判定：参考世萌规则，分数相同时，<span class="highlight">最后一次获得投票注入的时间越晚</span>（热度越高）的作品，排名越靠前。最终排名第一的作品将成为尼菜众望所归的旮旯届最强神作。</li>
             </ul>
         </div>
         
         <div style="text-align: center; margin-top: 60px;">
-            <a href="#" onclick="window.close(); return false;" style="color: var(--primary); text-decoration: none; border: 1px solid var(--primary); padding: 10px 30px; font-weight: bold; letter-spacing: 2px; transition: 0.3s;" onmouseover="this.style.background='var(--primary)'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='var(--primary)';">关闭档案 / 返回战场</a>
+            <a href="#" onclick="window.close(); return false;" style="color: var(--primary); text-decoration: none; border: 1px solid var(--primary); padding: 10px 30px; font-weight: bold; letter-spacing: 2px; transition: 0.3s;" onmouseover="this.style.background='var(--primary)'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='var(--primary)';">关闭档案 / 返回大厅</a>
         </div>
     </div>
 

@@ -45,6 +45,11 @@ $type = isset($_GET['type']) && in_array($_GET['type'], $allowed_types) ? $_GET[
 </head>
 <body>
 
+<?php 
+    // 无论你在哪个子文件夹，这行代码都能精准定位到根目录的 player.php
+    include_once $_SERVER['DOCUMENT_ROOT'] . "/player.php"; 
+?>
+
 <div class="editor-container">
     <div class="header">
         <h1><?php 

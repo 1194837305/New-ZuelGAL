@@ -136,7 +136,16 @@ function getArticleLink($type, $id, $url = '') {
         </form>
         
         <a href="index.php" class="back-link">← 返回社团主页</a>
+        <?php if ($_SESSION['user_id'] == 2): ?>
+    <div style="margin-top: 25px; border-top: 1px dashed #eee; padding-top: 20px;">
+        <a href="admin_dashboard.php" class="btn-save" 
+           style="background: #1a1a1c; text-decoration: none; display: block; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
+                  width: 200px; margin: 0 auto;"> ⚙️ 进入特调局 (最高权限)
+        </a>
     </div>
+<?php endif; ?>
+    </div>
+    
 
     <div class="dashboard-panel">
         

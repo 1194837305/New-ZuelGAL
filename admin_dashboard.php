@@ -25,6 +25,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $pdo = $pdo_auth; // 再次确保变量对齐
     $article_id = intval($_POST['article_id']);
     $action = $_POST['action'];
+    // --- 新增：处理成员审核逻辑 ---
+    if ($action === 'approve_user' || $action === 'reject_user') {
+        $target_uid = intval($_POST['target_user_id']);
+        $new_status = ($action === 'approve_user') ? 1 : 2;
+        try {
+            $pdo->prepare("UPDATE users SET status = ? WHERE id = ?")->execute([$new_status, $target_uid]);
+            echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => '数据库错误']);
+        }
+        exit;
+    }
     $new_status = ($action === 'approve') ? 1 : 2;
 
     try {
@@ -38,6 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 // 3. 拉取待审核与已公开的文章
+$stmt_users = $pdo->query("SELECT id, username, nickname, email, created_at FROM users WHERE status = 0 ORDER BY id ASC");
+$pending_users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
 $stmt_pending = $pdo->query("SELECT * FROM club_articles WHERE status = 0 ORDER BY created_at DESC");
 $pending_articles = $stmt_pending->fetchAll(PDO::FETCH_ASSOC);
 
@@ -72,10 +86,33 @@ $approved_articles = $stmt_approved->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <div class="dashboard">
         <div class="header">
+            <h1>🛡️ 特调局 - 综合管理控制台</h1>
+            <a href="index.php" style="color:#888;">返回主站</a>
+        </div>
+        <h3 style="color:#38a169;">👤 新成员入社申请 (<?php echo count($pending_users); ?>)</h3>
+        <div class="table-wrap">
+            <table>
+                <tr><th>ID</th><th>社团代号</th><th>注册邮箱</th><th>申请时间</th><th>操作</th></tr>
+                <?php foreach ($pending_users as $u): ?>
+                <tr id="user-row-<?php echo $u['id']; ?>">
+                    <td>#<?php echo $u['id']; ?></td>
+                    <td style="font-weight: bold; color: #fff;"><?php echo htmlspecialchars($u['nickname']); ?></td>
+                    <td><?php echo htmlspecialchars($u['email']); ?></td>
+                    <td style="color:#888; font-size:12px;"><?php echo $u['created_at']; ?></td>
+                    <td>
+                        <button class="btn btn-approve" onclick="handleUserAudit(<?php echo $u['id']; ?>, 'approve_user')">批准入社</button>
+                        <button class="btn btn-reject" onclick="handleUserAudit(<?php echo $u['id']; ?>, 'reject_user')">拒绝</button>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php if(empty($pending_users)) echo "<tr><td colspan='5' style='text-align:center; color:#666;'>暂无新申请</td></tr>"; ?>
+            </table>
+        </div>
+        <div class="header">
             <h1>🛡️ 资料仓库 - 审核控制台</h1>
             <a href="index.php" style="color:#888;">返回主站</a>
         </div>
-
+        
         <h3 style="color:#c9171e;">⏳ 待审核队列 (<?php echo count($pending_articles); ?>)</h3>
         <div class="table-wrap">
             <table>
@@ -126,6 +163,23 @@ $approved_articles = $stmt_approved->fetchAll(PDO::FETCH_ASSOC);
         
         if (result.success) {
             document.getElementById('row-' + id).remove();
+        } else {
+            alert('操作失败');
+        }
+    }
+    // 新增：处理用户审核的 JS 函数
+    async function handleUserAudit(id, action) {
+        if(!confirm(action === 'approve_user' ? '确定批准该成员入社吗？' : '确定拒绝该申请吗？')) return;
+        
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('target_user_id', id);
+
+        const response = await fetch('admin_dashboard.php', { method: 'POST', body: formData });
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('user-row-' + id).remove();
         } else {
             alert('操作失败');
         }
