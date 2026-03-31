@@ -55,25 +55,39 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const articleId = urlParams.get('id');
+        const fileUrl = urlParams.get('file');     // 接收新系统传来的动态路径
+        const fileTitle = urlParams.get('title');  // 接收新系统传来的标题
+
         const titleDisplay = document.getElementById('display-title');
         const container = document.getElementById('pdf-container');
         const loadingMsg = document.getElementById('loading-msg');
 
+        // 3. 路由分发：判断是读取老 ID 还是新文件路径
+        let targetUrl = "";
+        let finalTitle = "";
+
         if (articleId && pdfDatabase[articleId]) {
-            const data = pdfDatabase[articleId];
-            
-            // 3. 强行抓取数据并逐页渲染（保留了防止 206 报错的参数）
+            // 模式 A：老版本固定 ID 模式
+            targetUrl = pdfDatabase[articleId].url;
+            finalTitle = pdfDatabase[articleId].title;
+        } else if (fileUrl) {
+            // 模式 B：新版本动态 UGC 模式
+            targetUrl = decodeURIComponent(fileUrl);
+            finalTitle = fileTitle ? decodeURIComponent(fileTitle) : "社团绝密档案";
+        }
+
+        // 4. 执行渲染引擎
+        if (targetUrl) {
             pdfjsLib.getDocument({
-                url: data.url,
+                url: targetUrl,
                 disableRange: true,   // 必须保留：防止服务器底层协议切块报错
                 disableStream: true
             }).promise.then(pdf => {
                 loadingMsg.style.display = 'none'; 
-                titleDisplay.innerText = `${data.title} (${pdf.numPages}页)`;
+                titleDisplay.innerText = `${finalTitle} (${pdf.numPages}页)`;
                 
                 for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                     pdf.getPage(pageNum).then(page => {
-                        // 手机端适当降低分辨率倍率以保证渲染流畅度，电脑端看着也足够清晰
                         const scale = window.innerWidth < 600 ? 1.2 : 1.5; 
                         const viewport = page.getViewport({ scale: scale });
                         
@@ -88,11 +102,11 @@
                 }
             }).catch(err => {
                 titleDisplay.innerText = "解码失败";
-                loadingMsg.innerHTML = `⚠️ 文件读取错误: <br><br> ${err.message}`;
+                loadingMsg.innerHTML = `⚠️ 跨域或文件读取错误: <br><br> ${err.message}`;
             });
         } else {
             titleDisplay.innerText = "档案丢失";
-            loadingMsg.innerText = "ERROR 404";
+            loadingMsg.innerText = "ERROR 404: 未知的档案特征码";
         }
     </script>
 </body>

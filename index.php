@@ -270,7 +270,20 @@ if (file_exists('user_config.php')) {
         .friendly-links a { color: #888; text-decoration: none; margin: 0 5px; transition: 0.3s; }
         .friendly-links a:hover { color: var(--primary); }
         .copyright { color: #444; }
-
+        /* === 新增：投稿按钮与弹窗卡片样式 === */
+        .btn-contribute {
+            background: var(--primary); color: #fff; border: none;
+            padding: 8px 20px; border-radius: 6px; cursor: pointer;
+            font-size: 14px; font-weight: bold; transition: 0.3s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-contribute:hover { box-shadow: 0 0 15px rgba(201, 23, 30, 0.5); filter: brightness(1.2); }
+        .option-card {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid #333;
+            border-radius: 8px; padding: 15px 20px; display: flex; align-items: center; gap: 15px;
+            cursor: pointer; transition: 0.3s;
+        }
+        .option-card:hover { border-color: var(--primary); background: rgba(201, 23, 30, 0.1); transform: translateY(-3px); }
         /* === 7. 手机端响应式适配 === */
         @media (max-width: 850px) {
             .pc-only { display: none !important; }
@@ -372,7 +385,37 @@ if (file_exists('user_config.php')) {
             </div>
         </div>
     </div>
-    
+    <div id="contribute-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 style="margin: 0; color: #fff;">选择档案类型</h3>
+                <span class="close-modal" onclick="closeContributeModal()">&times;</span>
+            </div>
+            <div class="option-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-top: 20px;">
+                <div class="option-card" onclick="startSubmission('text')">
+                    <div class="icon" style="font-size: 24px;">📝</div>
+                    <div class="info" style="flex: 1; text-align: left;">
+                        <h4 style="margin: 0 0 5px 0; color: #fff; font-size: 16px;">文本/图文专栏</h4>
+                        <small style="color: #888; font-size: 12px;">仿 B 站风格富文本排版，支持点赞评论</small>
+                    </div>
+                </div>
+                <div class="option-card" onclick="startSubmission('pdf')">
+                    <div class="icon" style="font-size: 24px;">📄</div>
+                    <div class="info" style="flex: 1; text-align: left;">
+                        <h4 style="margin: 0 0 5px 0; color: #fff; font-size: 16px;">PDF 档案解析</h4>
+                        <small style="color: #888; font-size: 12px;">适用于长篇学术研究、排版固定的社团年鉴</small>
+                    </div>
+                </div>
+                <div class="option-card" onclick="startSubmission('bilibili')">
+                    <div class="icon" style="font-size: 24px;">📺</div>
+                    <div class="info" style="flex: 1; text-align: left;">
+                        <h4 style="margin: 0 0 5px 0; color: #fff; font-size: 16px;">B 站专栏导入</h4>
+                        <small style="color: #888; font-size: 12px;">直接跳转外部链接，节省站内服务器资源</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="global-bg"></div>
     <div id="bg-overlay"></div>
 
@@ -516,6 +559,33 @@ if (file_exists('user_config.php')) {
             authModal.classList.remove('active');
         }
 
+        // 获取 PHP 的登录状态（注入到 JS 变量中）
+        const IS_LOGGED_IN = <?php echo isset($_SESSION['user_id']) ? 'true' : 'false'; ?>;
+
+                // 1. 投稿按钮点击事件（负责权限拦截）
+        function handleContributeClick() {
+            // IS_LOGGED_IN 变量在之前已通过 PHP 注入
+            if (!IS_LOGGED_IN) {
+                alert("只有正式社员（已登录）才能提交档案哦！");
+                openAuthModal('login'); 
+             return;
+            }
+            document.getElementById('contribute-modal').classList.add('active');
+        }
+
+        // 2. 关闭投稿选项弹窗
+        function closeContributeModal() {
+            const modal = document.getElementById('contribute-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        // 3. 选择投稿模式后的跳转（单一入口原则）
+        function startSubmission(type) {
+            closeContributeModal();
+            // 统一跳转至创作中心，带上类型参数
+            window.location.href = 'contribute.php?type=' + type;
+        }
+
         function switchAuthTab(mode) {
             const loginBtn = document.querySelector('.tab-btn:nth-child(1)');
             const regBtn = document.querySelector('.tab-btn:nth-child(2)');
@@ -646,7 +716,8 @@ if (file_exists('user_config.php')) {
             `).join('');
         };
 
-        const archiveData = [
+// === 1. 资料仓库：静态置顶数据 + 动态数据加载逻辑 ===
+        const staticArchiveData = [
             {
                 cover: "https://assets-1316693082.cos.ap-nanjing.myqcloud.com/assets/new_easter_egg.jpg",
                 title: "【VNFES-视觉小说的今后和将来企划】中南财经政法大学NTR交牛同好会历史",
@@ -656,19 +727,23 @@ if (file_exists('user_config.php')) {
                 link: "/articles/index.html?id=001"
             },
             {
-                cover: "",
+                cover: "", 
                 title: "【推荐】试了Project: Zuelphoria的demo，我必须说点什么",
                 summary: "上周群主在群里发了Project:Zuelphoria的demo，让我们几个帮忙测试。说实话本来没抱太高期望，同人社团做游戏嘛，能有个七八分像样就不错了。但打开之后玩了四十多分钟，我愣是没缓过神。妈呀，这完成度也太高了...",
                 date: "2018-09-15",
                 author: "211.69.161.30",
                 link: "/kwaidan.php"
-            },
+            }
         ];
 
+        // 初始化数据，默认先装载置顶文章
+        let archiveData = [...staticArchiveData];
+
+        // 渲染列表函数
         const renderArchiveList = () => {
             return archiveData.map(item => `
                 <div class="archive-item" onclick="window.location.href='${item.link}'">
-                    <div class="archive-cover" style="background-image: url('${item.cover}');"></div>
+                    <div class="archive-cover" style="background-image: url('${item.cover || '/assets/桀不懂.jpg'}'); ${item.cover ? '' : 'filter: grayscale(80%); opacity: 0.5;'}"></div>
                     <div class="archive-content">
                         <div>
                             <h3 class="archive-title">${item.title}</h3>
@@ -682,6 +757,39 @@ if (file_exists('user_config.php')) {
                 </div>
             `).join('');
         };
+
+        // 异步拉取后台审核通过的文章
+        async function fetchArchives() {
+            try {
+                const response = await fetch('api_get_articles.php');
+                const dynamicData = await response.json();
+                
+                // 将后台新文章拼接在两篇元老级文章的后面
+                archiveData = [...staticArchiveData, ...dynamicData];
+                
+                // 刷新页面显示
+                const warehouseContainer = document.querySelector('.archive-list');
+                if (warehouseContainer) {
+                    warehouseContainer.innerHTML = renderArchiveList();
+                }
+            } catch (err) {
+                console.error("动态档案加载失败:", err);
+            }
+        }
+
+        // 页面打开时自动拉取一次
+        document.addEventListener('DOMContentLoaded', fetchArchives);
+
+        // 安全拦截器：每次点击侧边栏切换到“资料仓库”时，重新拉取最新数据
+        if (typeof loadView === "function") {
+            const originalLoadView = loadView; 
+            window.loadView = function(viewName) {
+                if (viewName === 'warehouse') {
+                    fetchArchives(); 
+                }
+                originalLoadView(viewName); 
+            };
+        }
 
         const extraData = [
             { title: "欢迎来到特调局", url: "https://youhiya.itch.io/welcome-to-sib", tags: ["摸鱼", "ARG"], emoji: "📁" },
@@ -763,6 +871,38 @@ if (file_exists('user_config.php')) {
                 </div>
             `).join('');
         };
+
+        function getWarehouseHTML() {
+    return `
+        <div class="content-section" style="min-height: 100vh; padding-top: 100px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 class="section-title" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">资料仓库 <span>ARCHIVE</span></h2>
+                <button class="btn-contribute" onclick="handleContributeClick()">✍️ 提交档案</button>
+            </div>
+            <p style="color: #aaa; margin-bottom: 40px; line-height: 2;">收录社团优质专栏、漫评、攻略与剧情解析。</p>
+            <div class="archive-list">
+                ${renderArchiveList()}
+            </div>
+        </div>
+    `;
+}
+
+        function getWarehouseHTML() {
+    return `
+        <div class="content-section" style="min-height: 100vh; padding-top: 100px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 class="section-title" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">资料仓库 <span>ARCHIVE</span></h2>
+                <button class="btn-contribute" onclick="handleContributeClick()">
+                    ✍️ 投稿
+                </button>
+            </div>
+            <p style="color: #aaa; margin-bottom: 40px; line-height: 2;">收录社团优质专栏、漫评、攻略与剧情解析。</p>
+            <div class="archive-list">
+                ${renderArchiveList()}
+            </div>
+        </div>
+    `;
+}
 
         // === 4. SPA 视图模板 ===
         const views = {
@@ -854,15 +994,7 @@ if (file_exists('user_config.php')) {
                     </div>
                 </div>
             `,
-            warehouse: `
-                <div class="content-section" style="min-height: 100vh; padding-top: 100px;">
-                    <h2 class="section-title">资料仓库 <span>ARCHIVE</span></h2>
-                    <p style="color: #aaa; margin-bottom: 40px; line-height: 2;">收录社团优质专栏、漫评、攻略与剧情解析。</p>
-                    <div class="archive-list">
-                        ${renderArchiveList()}
-                    </div>
-                </div>
-            `,
+            warehouse: 'DYNAMIC_MARKER',
             extra: `
                 <div class="content-section" style="min-height: 100vh; padding-top: 100px;">
                     <h2 class="section-title">工具与神秘链接 <span>EXTRA</span></h2>
@@ -889,28 +1021,44 @@ if (file_exists('user_config.php')) {
         const navItems = document.querySelectorAll('.nav-item');
 
         function loadView(viewName) {
-            viewContainer.classList.add('fade');
-            setTimeout(() => {
-                viewContainer.innerHTML = views[viewName] || '<h1>404 Not Found</h1>';
-                mainContentArea.scrollTop = 0;
-                
-                navItems.forEach(nav => nav.classList.remove('active'));
-                const activeNav = document.querySelector(`.nav-item[data-view="${viewName}"]`);
-                if(activeNav) activeNav.classList.add('active');
-                
-                viewContainer.classList.remove('fade');
+    viewContainer.classList.add('fade');
+    
+    setTimeout(() => {
+        // --- 核心逻辑开始 ---
+        let finalHTML = "";
 
-                if (window.innerWidth > 850) {
-                    const pcVideo = document.getElementById('pc-video');
-                    if (pcVideo) {
-                        const source = pcVideo.querySelector('source');
-                        source.src = source.getAttribute('data-src');
-                        pcVideo.load();
-                        pcVideo.play().catch(e => console.warn(e));
-                    }
-                }
-            }, 400); 
+        if (viewName === 'warehouse') {
+            // 如果是资料仓库，直接调用函数生成最新的 HTML
+            finalHTML = getWarehouseHTML();
+        } else {
+            // 其他页面，依然读取 views 对象里的死代码
+            finalHTML = views[viewName] || '<h1>404 Not Found</h1>';
         }
+        
+        viewContainer.innerHTML = finalHTML;
+        // --- 核心逻辑结束 ---
+
+        mainContentArea.scrollTop = 0;
+        
+        // 导航高亮逻辑
+        navItems.forEach(nav => nav.classList.remove('active'));
+        const activeNav = document.querySelector(`.nav-item[data-view="${viewName}"]`);
+        if(activeNav) activeNav.classList.add('active');
+        
+        viewContainer.classList.remove('fade');
+
+        // 视频自适应加载逻辑（保持你原来的不变）
+        if (window.innerWidth > 850 && viewName === 'home') {
+            const pcVideo = document.getElementById('pc-video');
+            if (pcVideo) {
+                const source = pcVideo.querySelector('source');
+                source.src = source.getAttribute('data-src');
+                pcVideo.load();
+                pcVideo.play().catch(e => console.warn(e));
+            }
+        }
+    }, 400); 
+}
 
         navItems.forEach(item => {
             item.addEventListener('click', (e) => {
