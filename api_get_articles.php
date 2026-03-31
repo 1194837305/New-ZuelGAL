@@ -27,7 +27,7 @@ try {
             'cover'   => $art['cover_url'],
             // 根据类型生成跳转链接
             'link'    => ($art['type'] === 'pdf') 
-                 ? "/articles/index.html?file=" . urlencode($art['content']) . "&title=" . urlencode($art['title'])
+                 ? "/articles/index.html?id=" . $art['id'] . "&file=" . urlencode($art['content']) . "&title=" . urlencode($art['title'])
                  : ($art['type'] === 'text' ? "articles/article.php?id=" . $art['id'] : $art['content'])
         ];
     }

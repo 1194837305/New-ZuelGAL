@@ -46,11 +46,10 @@ if ($article['type'] === 'bilibili') {
     header("Location: " . $article['content']);
     exit;
 } elseif ($article['type'] === 'pdf') {
-    // 跃迁至前端 PDF 解析器，同时传递路径和真实标题
+    // 跃迁至前端 PDF 解析器，必须带上 id！
     $encoded_url = urlencode($article['content']);
     $encoded_title = urlencode($article['title']);
-    // 注意这里改成了 index.html 且加上了 title 参数
-    header("Location: /articles/index.html?file={$encoded_url}&title={$encoded_title}");
+    header("Location: /articles/index.html?id={$id}&file={$encoded_url}&title={$encoded_title}");
     exit;
 }
 
@@ -92,6 +91,21 @@ if ($article['type'] === 'bilibili') {
         .article-footer { margin-top: 60px; padding-top: 30px; border-top: 1px solid #333; text-align: center; }
         .like-btn { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 10px 30px; border-radius: 30px; font-size: 16px; cursor: pointer; transition: 0.3s; }
         .like-btn:hover { background: var(--primary); color: #fff; }
+        
+        /* 评论区样式 */
+        .comments-section { margin-top: 40px; border-top: 1px solid #333; padding-top: 30px; }
+        .comment-input-box { display: flex; gap: 15px; margin-bottom: 30px; }
+        .comment-input-box textarea { flex: 1; background: #111; border: 1px solid #333; color: #eee; padding: 15px; border-radius: 8px; font-family: inherit; resize: vertical; min-height: 80px; }
+        .comment-input-box textarea:focus { border-color: var(--primary); outline: none; }
+        .btn-send { background: var(--primary); color: #fff; border: none; padding: 0 25px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-send:hover { filter: brightness(1.2); }
+        
+        .comment-item { display: flex; gap: 15px; margin-bottom: 25px; }
+        .comment-avatar { width: 40px; height: 40px; border-radius: 50%; background: #222; background-size: cover; background-position: center; border: 1px solid #444; flex-shrink: 0;}
+        .comment-body { flex: 1; border-bottom: 1px dashed #222; padding-bottom: 15px; }
+        .comment-name { color: #aaa; font-size: 13px; margin-bottom: 5px; font-weight: bold; }
+        .comment-text { color: #ddd; font-size: 15px; line-height: 1.6; }
+        .comment-time { color: #666; font-size: 11px; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -126,9 +140,123 @@ if ($article['type'] === 'bilibili') {
         </div>
 
         <div class="article-footer">
-            <button class="like-btn" onclick="alert('点赞系统建设中...')">❤️ 赞同 (<?php echo $article['like_count']; ?>)</button>
+            <button id="btn-like" class="like-btn" onclick="toggleLike()">❤️ 赞同 (<span id="like-count"><?php echo $article['like_count']; ?></span>)</button>
         </div>
-    </div>
 
+        <div class="comments-section">
+            <h3 style="color: #fff; font-size: 18px; margin-bottom: 20px;">档案留言板</h3>
+            <div class="comment-input-box">
+                <textarea id="comment-input" placeholder="留下你的观测记录..."></textarea>
+                <button class="btn-send" onclick="submitComment()">发送</button>
+            </div>
+            <div id="comments-list">
+                <div style="color: #666; text-align: center; padding: 20px;">正在接通神经漫游网络...</div>
+            </div>
+        </div>
+    </div> <script>
+        // 确保 PHP 能够正确输出档案 ID
+        const currentArticleId = <?php echo isset($id) ? intval($id) : 0; ?>;
+        
+        // 1. 页面加载时拉取评论和点赞状态
+        async function loadInteractions() {
+            if (!currentArticleId) return;
+            try {
+                const res = await fetch(`../api_interaction.php?action=get_comments&article_id=${currentArticleId}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    // 渲染点赞状态
+                    const btnLike = document.getElementById('btn-like');
+                    if (data.is_liked) {
+                        btnLike.style.background = 'var(--primary)';
+                        btnLike.style.color = '#fff';
+                    }
+                    
+                    // 渲染评论列表
+                    const listContainer = document.getElementById('comments-list');
+                    if (data.comments.length === 0) {
+                        listContainer.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">暂无观测记录，来做第一个留言的人吧。</div>';
+                        return;
+                    }
+                    
+                    listContainer.innerHTML = data.comments.map(c => `
+                        <div class="comment-item">
+                            <div class="comment-avatar" style="background-image: url('${c.avatar || '../assets/bg1.jpg'}');"></div>
+                            <div class="comment-body">
+                                <div class="comment-name">${c.nickname || '佚名社员'}</div>
+                                <div class="comment-text">${c.content}</div>
+                                <div class="comment-time">${c.created_at}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error("互动数据加载失败:", err);
+            }
+        }
+
+        // 2. 点赞逻辑
+        async function toggleLike() {
+            if (!currentArticleId) return;
+            const formData = new FormData();
+            formData.append('action', 'toggle_like');
+            formData.append('article_id', currentArticleId);
+            
+            try {
+                const res = await fetch('../api_interaction.php', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('like-count').innerText = data.new_count;
+                    const btnLike = document.getElementById('btn-like');
+                    if (data.status === 'liked') {
+                        btnLike.style.background = 'var(--primary)'; 
+                        btnLike.style.color = '#fff';
+                    } else {
+                        btnLike.style.background = 'transparent'; 
+                        btnLike.style.color = 'var(--primary)';
+                    }
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert("网络连接失败，请稍后重试");
+            }
+        }
+
+        // 3. 评论逻辑
+        async function submitComment() {
+            if (!currentArticleId) return;
+            const input = document.getElementById('comment-input');
+            const content = input.value.trim();
+            if (!content) return alert('不能发送空电波哦');
+            
+            const formData = new FormData();
+            formData.append('action', 'comment');
+            formData.append('article_id', currentArticleId);
+            formData.append('content', content);
+            
+            try {
+                const res = await fetch('../api_interaction.php', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (data.success) {
+                    input.value = '';
+                    loadInteractions(); // 重新拉取列表，实现无刷新显示新评论
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert("网络连接失败，请稍后重试");
+            }
+        }
+
+        // 【安全补丁】：强制将函数绑定到全局 window 对象，防止作用域丢失
+        window.toggleLike = toggleLike;
+        window.submitComment = submitComment;
+
+        // 启动拉取
+        loadInteractions();
+    </script>
 </body>
 </html>

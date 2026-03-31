@@ -25,6 +25,28 @@
         }
         
         .loading-text { margin-top: 50px; color: #888; letter-spacing: 2px; }
+        
+        /* PDF 专属悬浮互动条与抽屉 */
+        .pdf-interaction-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(15, 15, 18, 0.95); backdrop-filter: blur(10px); border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.5);}
+        .interaction-btn { background: none; border: none; color: #ccc; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.3s; }
+        .interaction-btn:hover, .interaction-btn.active { color: var(--primary); }
+        
+        .comments-drawer { position: fixed; bottom: -100%; left: 0; width: 100%; height: 70vh; background: #0f0f12; z-index: 1001; border-top: 2px solid var(--primary); border-radius: 15px 15px 0 0; transition: bottom 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: 0 -10px 40px rgba(0,0,0,0.8);}
+        .comments-drawer.open { bottom: 0; }
+        .drawer-header { padding: 15px 20px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .drawer-close { color: #888; font-size: 24px; cursor: pointer; }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
+        .drawer-footer { padding: 15px 20px; background: #151518; border-top: 1px solid #222; display: flex; gap: 10px; }
+        .drawer-footer input { flex: 1; background: #0a0a0c; border: 1px solid #333; color: #fff; padding: 10px 15px; border-radius: 20px; outline: none; }
+        .drawer-footer button { background: var(--primary); color: #fff; border: none; padding: 0 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+
+        /* 复用一点上面写好的评论元素样式 */
+        .comment-item { display: flex; gap: 12px; margin-bottom: 20px; }
+        .comment-avatar { width: 32px; height: 32px; border-radius: 50%; background-size: cover; background-position: center; border: 1px solid #444; }
+        .comment-body { flex: 1; }
+        .comment-name { color: #aaa; font-size: 12px; margin-bottom: 3px; font-weight: bold; }
+        .comment-text { color: #ddd; font-size: 14px; line-height: 1.5; }
+        .comment-time { color: #555; font-size: 10px; margin-top: 5px;
     </style>
     
     <script src="/assets/js/pdf.min.js"></script>
@@ -109,5 +131,90 @@
             loadingMsg.innerText = "ERROR 404: 未知的档案特征码";
         }
     </script>
+    <div class="pdf-interaction-bar" id="pdf-interact" style="display: none;">
+        <button class="interaction-btn" id="pdf-btn-like" onclick="togglePdfLike()">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            <span id="pdf-like-text">赞同</span>
+        </button>
+        <button class="interaction-btn" onclick="openCommentsDrawer()">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            留言板
+        </button>
+    </div>
+
+    <div class="comments-drawer" id="comments-drawer">
+        <div class="drawer-header">
+            <span>档案留言板</span>
+            <span class="drawer-close" onclick="closeCommentsDrawer()">&times;</span>
+        </div>
+        <div class="drawer-body" id="drawer-comments-list">
+            </div>
+        <div class="drawer-footer">
+            <input type="text" id="drawer-input" placeholder="输入观测记录...">
+            <button onclick="submitPdfComment()">发送</button>
+        </div>
+    </div>
+
+    <script>
+        // 这一部分接在原来的 PDF.js 路由分发逻辑的下方
+        
+        // 只有是从数据库来的新版动态文章，才开启互动系统 (因为有真实 ID)
+        if (articleId && !pdfDatabase[articleId]) {
+            document.getElementById('pdf-interact').style.display = 'flex';
+            loadPdfInteractions();
+        }
+
+        function openCommentsDrawer() { document.getElementById('comments-drawer').classList.add('open'); }
+        function closeCommentsDrawer() { document.getElementById('comments-drawer').classList.remove('open'); }
+
+        async function loadPdfInteractions() {
+            try {
+                const res = await fetch(`../api_interaction.php?action=get_comments&article_id=${articleId}`);
+                const data = await res.json();
+                if (data.success) {
+                    const btnLike = document.getElementById('pdf-btn-like');
+                    if (data.is_liked) { btnLike.classList.add('active'); btnLike.querySelector('svg').style.fill = 'var(--primary)'; }
+                    
+                    const listContainer = document.getElementById('drawer-comments-list');
+                    if (data.comments.length === 0) { listContainer.innerHTML = '<div style="color: #666; text-align: center; margin-top: 40px;">暂无留言</div>'; return; }
+                    
+                    listContainer.innerHTML = data.comments.map(c => `
+                        <div class="comment-item">
+                            <div class="comment-avatar" style="background-image: url('${c.avatar || '../assets/bg1.jpg'}');"></div>
+                            <div class="comment-body">
+                                <div class="comment-name">${c.nickname || '佚名社员'}</div>
+                                <div class="comment-text">${c.content}</div>
+                                <div class="comment-time">${c.created_at}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function togglePdfLike() {
+            const formData = new FormData();
+            formData.append('action', 'toggle_like'); formData.append('article_id', articleId);
+            const res = await fetch('../api_interaction.php', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) {
+                const btnLike = document.getElementById('pdf-btn-like');
+                if (data.status === 'liked') { btnLike.classList.add('active'); btnLike.querySelector('svg').style.fill = 'var(--primary)'; } 
+                else { btnLike.classList.remove('active'); btnLike.querySelector('svg').style.fill = 'none'; }
+            } else { alert(data.message); }
+        }
+
+        async function submitPdfComment() {
+            const input = document.getElementById('drawer-input');
+            const content = input.value.trim();
+            if (!content) return;
+            const formData = new FormData();
+            formData.append('action', 'comment'); formData.append('article_id', articleId); formData.append('content', content);
+            const res = await fetch('../api_interaction.php', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) { input.value = ''; loadPdfInteractions(); } else { alert(data.message); }
+        }
+    </script>
+    
 </body>
 </html>
