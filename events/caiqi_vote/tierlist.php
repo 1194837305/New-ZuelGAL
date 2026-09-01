@@ -17,7 +17,7 @@ if (!file_exists($config_path)) {
 require_once $config_path;
 
 $games = [];
-$is_shrunk = (time() > strtotime("2026-04-27 00:00:00")); 
+$is_shrunk = (time() > strtotime("2026-04-13 00:00:00")); 
 
 try {
     $conn = db_connect();
@@ -241,6 +241,9 @@ function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk
 
     <div class="battle-header">
         <a href="index.php?archive=1" class="back-btn">← 阅览海选历史盲盒</a>
+        <a href="battle_line.php" target="_blank" class="cyber-rule-btn" style="top: 80px; border-color: #555; color: #ccc;">
+    📈 观测战线 (Live)
+</a>
         <h1 class="title">十二菜器</h1>
         <h4 class="title">第二阶段：淘汰赛</h4>
         <div class="countdown">
@@ -280,8 +283,8 @@ function renderGames($tier_array, $max_slots, $is_trash_tier = false, $is_shrunk
 
     <script>
         const timeNodes = {
-            shrink: new Date("2026-04-27 00:00:00").getTime(),
-            final: new Date("2026-04-28 00:00:00").getTime()
+            shrink: new Date("2026-04-13 00:00:00").getTime(),
+            final: new Date("2026-04-14 00:00:00").getTime()
         };
 
         function updateTierTimer() {

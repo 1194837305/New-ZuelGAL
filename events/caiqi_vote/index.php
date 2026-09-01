@@ -51,7 +51,8 @@ try {
                 if(is_array($games_array)) {
                     foreach($games_array as $game) {
                         $formatted_slots[] = [
-                            'public' => isset($game['isPublic']) ? $game['isPublic'] : false,
+                            // 🔥 强制覆写：无视数据库原始隐藏设定，全部强行公开！
+                            'public' => true, 
                             'cover' => isset($game['cover']) ? $game['cover'] : '',
                             'title' => isset($game['title']) ? $game['title'] : ''
                         ];
@@ -435,7 +436,7 @@ try {
         
         <script>
     // 🚩 在这里设置你的海选截止时间
-    const deadline = new Date("2026-04-20 23:59:59").getTime();
+    const deadline = new Date("2026-04-10 23:59:59").getTime();
 
     function updateTimer() {
         const now = new Date().getTime();

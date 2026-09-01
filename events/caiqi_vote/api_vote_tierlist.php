@@ -67,8 +67,8 @@ try {
     $today = date('Y-m-d');
 
     // 3. 时间轴物理封锁
-    $shrink_time = strtotime("2026-04-27 00:00:00"); 
-    $end_time    = strtotime("2026-04-28 00:00:00"); 
+    $shrink_time = strtotime("2026-04-13 00:00:00"); 
+    $end_time    = strtotime("2026-04-14 00:00:00"); 
     $now = time();
 
     if ($now > $end_time) {

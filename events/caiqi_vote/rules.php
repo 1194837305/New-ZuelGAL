@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十二菜器 · 赛事最高机密档案</title>
+    <title>十二菜器 · 赛事规则</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -319,7 +319,7 @@
                 <h2 class="section-title">盲盒提案海选</h2>
             </div>
             <ul class="rule-list">
-                <li>社员可在提案大厅提交自己心仪的 Galgame 作品列表，并为其它提案投票（仅1票机会）</li>
+                <li>全体群友可在提案大厅提交自己心仪的 Galgame 作品列表，并为其它提案投票（仅1票机会）</li>
                 <li>每份提案最多包含 <span class="highlight">12 部作品</span>,可以将不超过一半的作品设置为公开可见</li>
                 <li>提案将在后台自动根据得票热度进行排序，根据提案的得票分配晋级下一轮的24部作品名额。</li>
             </ul>

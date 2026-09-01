@@ -13,7 +13,7 @@ require_once $config_path;
 try {
     $conn = db_connect();
 
-    $deadline = strtotime("2026-04-20 23:59:59");
+    $deadline = strtotime("2026-04-10 23:59:59");
 if (time() > $deadline) {
     die(json_encode(['status' => 'error', 'message' => '海选档案已封存，无法再进行提案或投票。']));
 }

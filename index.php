@@ -223,6 +223,7 @@ if (file_exists('user_config.php')) {
         .project-info p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
         .status-badge { position: absolute; top: 15px; right: 15px; z-index: 10; padding: 4px 10px; font-size: 12px; border-radius: 4px; font-weight: bold; }
         .status-ended { background: #555; }
+        .status-active { background: var(--primary); color: #fff; box-shadow: 0 0 10px rgba(201, 23, 30, 0.5); }
         .special-event-card { display: flex; border: 1px solid #333; background: rgba(20,20,25,0.8); }
         .special-event-card .project-img { width: 50%; height: auto; min-height: 300px; border-bottom: none; border-right: 2px solid var(--primary); }
         .special-event-card .project-info { width: 50%; display: flex; flex-direction: column; justify-content: center; padding: 40px; box-sizing: border-box;}
@@ -684,12 +685,12 @@ if (file_exists('user_config.php')) {
         // === 3. 数据中心 ===
         const projectsData = [
             {
-                status: "MAINTENANCE 架构升级中",
-                statusClass: "status-ended",
+                status: "ACTIVE 进行中",
+                statusClass: "status-active",
                 img: "/assets/backup/sora01.png", 
                 imgStyle: "filter: brightness(0.5);",
                 title: "十二菜器作品评选",
-                desc: "基于全新 YmGal API 构建。从浩瀚的档案库中，选出你心目中的十二部神作。（当前区块正在进行视觉重构，访问路径暂已冻结）",
+                desc: "十二菜器！选出你心目中的十二部神作组成提案！并向其它提案投票！",
                 link: "/events/caiqi_vote/index.php"
             },
             {
@@ -852,6 +853,7 @@ if (file_exists('user_config.php')) {
             { name: "丛雨 Murasame", role: "Robot/前·看板娘", avatar: "/assets/profile/murasame.jpg", desc: "时代的眼泪，从风光无限到被无情抛弃只过了不到一年。" },
             { name: "blur  ", role: "群主/创始人", avatar: "/assets/profile/blur.jpg", desc: "神秘的20级财税师兄，没人知道为什么他能在2014年创建本群。" },
             { name: "神明 Kamisama ", role: "???", avatar: "/assets/profile/yinuo.png", desc: "不愿意透露姓名的神明，与后面的妖魔鬼怪划清界限，不同其沆瀣一气。" },
+            { name: "凛雨 ", role: "???", avatar: "/assets/profile/linyu.jpg", desc: "普普通通的一名galgame爱好者｜想成为现充之人" },
             { name: "Xianer  ", role: "管理/傀儡", avatar: "/assets/profile/xianer.jpg", desc: "绝望地看着一切崩坏，只能靠后人的智慧了，你群未来怎么样只有天知道..." },
             { name: "无涯  ", role: "", avatar: "/assets/profile/wuya.jpg", desc: "已毕业土木国gal师兄｜三次元现充GAL男主" },
             { name: "顽皮汪汪  ", role: "", avatar: "/assets/profile/wanpiwangwang.jpg", desc: "ZUEL第二神人｜悬疑猎奇向受益者|已成功以坏结局通关现实高恋" },
@@ -921,8 +923,8 @@ if (file_exists('user_config.php')) {
             <div class="content-section">
                 <h2 class="section-title">最新情报 <span>UPDATE & NEWS</span></h2>
                 <ul class="news-list">
-                    <li class="news-item"><div class="news-date">2026.03.09</div><div class="news-tag">活动</div><div class="news-title">「十二菜器」年度作品大赏即将开启。</div></li>
-                    <li class="news-item"><div class="news-date">2026.02.26</div><div class="news-tag">系统</div><div class="news-title">官方网站 v2.0 全新架构上线，支持移动端自适应。</div></li>
+                    <li class="news-item"><div class="news-date">2026.04.04</div><div class="news-tag">活动</div><div class="news-title">「十二菜器」作品祭奠大赏现已开启。</div></li>
+                    <li class="news-item"><div class="news-date">2026.04.01</div><div class="news-tag">系统</div><div class="news-title">资料仓库页面已支持登录用户投稿、评论、点赞。</div></li>
                 </ul>
             </div>
             <div class="content-section" style="padding-bottom: 80px;">
@@ -932,7 +934,7 @@ if (file_exists('user_config.php')) {
                     <div class="project-info">
                         <span style="color: var(--primary); font-weight: bold; margin-bottom: 10px; font-size: 12px; letter-spacing: 2px;">PREPARING...</span>
                         <h3 style="font-size: 32px; margin-bottom: 20px; line-height: 1.3;">十二菜器<br>YmGal 联库企划</h3>
-                        <p>这是一场属于现充Zueler的狂欢。平台接入月幕 Gal 数据库，开启全新的年度神作评选。</p>
+                        <p>这是一场属于现充Zueler的狂欢。可能是全国高校中最晚但最公正、最吉列的神作评选。</p>
                         <button onclick="loadView('projects')" style="margin-top: 30px; background: transparent; border: 1px solid #fff; color: #fff; padding: 10px 20px; width: 150px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.background='var(--primary)'" onmouseout="this.style.background='transparent'">进入企划枢纽 →</button>
                     </div>
                 </div>
